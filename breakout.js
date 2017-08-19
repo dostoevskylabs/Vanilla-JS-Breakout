@@ -17,7 +17,7 @@ let safeHeight = 720;
 // their value to true so that we know where the player is moving
 let keysDown = {};
 // control game state
-let gameState = 1;
+let gameState = 0;
 // store game objects
 let gameObjects = [];
 let timestep = 1000 / 60;
@@ -161,18 +161,18 @@ class GameObject{
     this.sprite = sprite;
   }
   get top(){
-  	return this.pos.y;
+    return this.pos.y;
   }
   get right(){
-  	return this.pos.x + this.size.w;
+    return this.pos.x + this.size.w;
   }
   get bottom(){
-  	return this.pos.y + this.size.h;
+    return this.pos.y + this.size.h;
   }
   get left(){
-  	return this.pos.x;
+    return this.pos.x;
   }
-	draw(){
+  draw(){
     if ( this.pos.x != this.prev.x ||
           this.pos.y != this.prev.y ||
           this.size.w != this.prev.w ||
@@ -190,33 +190,32 @@ class GameObject{
       this.size.w,
       this.size.h
     );
-	}
-	clear(ctx){
-    //ctx.fillStyle = "#fff";
+  }
+  clear(ctx){
     ctx.clearRect(this.prev.x, this.prev.y, this.prev.w, this.prev.h);
     this.prev.x = this.pos.x;
     this.prev.y = this.pos.y;
     this.prev.w = this.size.w;
     this.prev.h = this.size.h;
-	}
+  }
 }
 class Brick extends GameObject{
-	constructor ( sprite, x, y, health = 1, breakable = true, powerup = 0 ) {
-  	super(x, y, 20, 20, sprite);
+  constructor ( sprite, x, y, health = 1, breakable = true, powerup = 0 ) {
+    super(x, y, 20, 20, sprite);
     this.health = health;
     this.breakable = breakable;
     this.powerup = powerup;
   }
 }
 class Ball extends GameObject{
-	constructor ( sprite, x, y ) {
-  	super(x, y, 20, 20, sprite);
+  constructor ( sprite, x, y ) {
+    super(x, y, 20, 20, sprite);
     this.velocity = {x: 50, y: -50};
   }
 }
 class Paddle extends GameObject{
-	constructor ( sprite, x, y ) {
-  	super(x, y, 100, 16, sprite);
+  constructor ( sprite, x, y ) {
+    super(x, y, 100, 16, sprite);
     this.velocity = {x: 100, y: 0};
   }
 }
@@ -246,27 +245,9 @@ function isObjectInstanceOf(gameObjects, gameObject){
     }
   }
 }
-function checkCollision(rect1, rect2){
-  if (rect1.pos.x < rect2.pos.x + rect2.size.w &&
-      rect1.pos.x + rect1.size.w > rect2.pos.x &&
-      rect1.pos.x < rect2.pos.y + rect2.size.h &&
-      rect1.size.h + rect1.pos.y > rect2.pos.y ) {
-    return true;
-  }
-  return false;
-}
 function generateObjects(){
   if ( gameObjects.length > 0 ) return;
-  let levelOne = [
-    [0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,2,3,4,5,6,8,10,12,14],
-    [0,0,0,0,2,0,0,0,2,0,0,0,0,0,0,2,3,4,5,6,8,10,12,14,14],
-    [0,0,0,3,3,3,3,3,3,3,0,0,0,0,0,3,4,5,7,8,10,12,14,13,5],
-    [0,0,4,4,0,4,4,4,0,4,4,0,0,0,0,4,5,7,9,11,13,14,12,12,12],
-    [0,5,5,5,5,5,5,5,5,5,5,5,0,0,0,5,6,8,9,13,13,14,3,3,3],
-    [0,6,0,6,6,6,6,6,6,6,0,6,0,0,0,6,8,11,12,14,10,3,2,2,2],
-    [0,7,0,7,0,0,0,0,0,7,0,7,0,0,0,8,10,12,14,11,8,3,2,14,14],
-    [0,0,0,0,8,8,0,8,8,0,0,0,0,0,0,10,12,14,14,6,7,3,2,14,1]
-  ];
+  let levelOne = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],[2,2,2,5,5,5,10,10,10,12,12,12,13,13,13,14,14,14,0,0],[2,2,2,5,5,5,10,10,10,12,12,12,13,13,13,14,14,14,0,0],[2,2,2,5,5,5,10,10,10,12,12,12,13,13,13,14,14,14,0,0],[2,2,2,5,5,5,10,10,10,12,12,12,13,13,13,14,14,14,0,0],[4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]];
   gameObjects.push(new Paddle(
     SpriteMap.paddle.normal, 
     (canvas.width / 2) - 35, 
@@ -284,13 +265,39 @@ function drawObjects(){
     gameObjects[i].draw(ctx);
   }
 }
+function checkCollision(gameObject){
+  for ( let i = 0; i < gameObjects.length; i++ ) {
+    if ( gameObjects[i] instanceof Brick ) {
+      if ( gameObject.top < gameObjects[i].bottom &&
+            gameObject.right > gameObjects[i].left &&
+            gameObject.bottom > gameObjects[i].top &&
+            gameObject.left < gameObjects[i].right ) {
+          if ( gameObject.pos.y < gameObjects[i].pos.y - (gameObjects[i].size.h / 2) ||
+                gameObject.pos.y > gameObjects[i].pos.y + (gameObjects[i].size.h / 2) ) {
+            gameObject.velocity.y =  -1 * gameObject.velocity.y;
+          } else {
+            gameObject.velocity.x = -1 * gameObject.velocity.x;
+          }      
+        gameObjects[i].clear(ctx);
+        gameObjects.splice(i, 1);
+      }
+    } else if ( gameObjects[i] instanceof Paddle ) {
+      if ( gameObject.bottom > gameObjects[i].top &&
+            gameObject.top < gameObjects[i].bottom &&
+            gameObject.left < gameObjects[i].right &&
+            gameObject.right > gameObjects[i].left ) {
+        gameObject.velocity.y = -gameObject.velocity.y;
+      }
+    }
+  }
+}
 // define bounds that the player's sprite cannot cross
 // right, left, bottom, top
 function setBounds(gameObject){
-  if ( gameObject.pos.x >= canvas.width - gameObject.size.w ) { // right 60
+  if ( gameObject.pos.x >= canvas.width - gameObject.size.w ) {
     gameObject.pos.x = canvas.width - gameObject.size.w;
   }
-  if ( gameObject.pos.x <= 0 ) { // left 40
+  if ( gameObject.pos.x <= 0 ) {
     gameObject.pos.x = 1;
   }
 }
@@ -302,10 +309,14 @@ function movePosition(gameObject, modifier){
   if ( 39 in keysDown ) { // player going right
     gameObject.pos.x += Math.round(gameObject.velocity.x * modifier);
   }
-  if ( 40 in keysDown ) {
+  if ( 40 in keysDown ) { // launch ball
     if ( gameObject instanceof Ball ) {
-      launched = true;
-      ctx.clearRect((canvas.width / 2) - 175,(canvas.height / 2) - 75, 350, 150);
+      gameState++;
+      ctx.clearRect(
+        (canvas.width / 2) - 175,
+        (canvas.height / 2) - 75,
+        350, 150
+      );
     }
   }
 };
@@ -325,32 +336,13 @@ function setDirection(gameObject, modifier){
   } else if ( gameObject.bottom > canvas.height ) {
     gameObject.pos.y = canvas.height - gameObject.size.h;
   }
-  for ( let i = 0; i < gameObjects.length; i++ ) {
-    if ( gameObjects[i] instanceof Brick ) {
-      let brick = gameObjects[i];
-      if ( gameObject.top < brick.bottom &&
-            gameObject.right > brick.left &&
-            gameObject.bottom > brick.top &&
-            gameObject.left < brick.right ) {
-        gameObject.velocity.x = -gameObject.velocity.x;
-        brick.clear(ctx);
-        gameObjects.splice(i, 1);
-      }
-    } else if ( gameObjects[i] instanceof Paddle ) {
-      let paddle = gameObjects[i];
-      if ( gameObject.bottom > paddle.top &&
-            gameObject.top < paddle.bottom &&
-            gameObject.left < paddle.right &&
-            gameObject.right > paddle.left ) {
-        gameObject.velocity.y = -gameObject.velocity.y;
-      }
-    }
-  }
+  checkCollision(gameObject);  
 }
 function startGame(){
   SpriteMap.sheet = assetLoader.imgs.ts2;
   ctx.drawImage(SpriteMap.sheet, 0, 240, 350, 150, (canvas.width / 2) - 175,(canvas.height / 2) - 75, 350, 150);
   generateObjects();
+  gameState++;
   gameLoop();    
 }
 function gameLoop(){
@@ -369,16 +361,24 @@ function gameLoop(){
   drawObjects(); // render
   requestAnimationFrame(gameLoop);
 }
-function update(delta){
-  let modifier = delta / 1000;
+function update(modifier){
+  modifier /= 500;
   let ball = isObjectInstanceOf(gameObjects, Ball);
   let paddle = isObjectInstanceOf(gameObjects, Paddle);
+  if ( gameObjects.length < 3 || ball.pos.y > ( paddle.bottom + (paddle.size.h / 2)  ) ) {
+    gameObjects = [];
+    gameState = 0;
+    ball.clear(ctx);
+    paddle.clear(ctx);
+    return startGame();
+  }    
   setBounds(paddle);
-  if ( !launched ) {
-    setBounds(ball);
+  if ( gameState === 1 ) {
+    ball.pos.x = paddle.pos.x + paddle.size.w / 2.5;
+    ball.pos.y = paddle.pos.y - ball.size.h;
     movePosition(ball, modifier);
     movePosition(paddle, modifier);
-  } else {
+  } else if ( gameState === 2 ) {
     setDirection(ball, modifier);
     movePosition(paddle, modifier);
   }
