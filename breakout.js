@@ -200,7 +200,7 @@ class GameObject{
 }
 class Brick extends GameObject{
   constructor ( sprite, x, y, health = 1, breakable = true, powerup = 0 ) {
-    super(x, y, 20, 20, sprite);
+    super(x, y, SpriteMap.bricks._size.w, SpriteMap.bricks._size.h, sprite);
     this.health = health;
     this.breakable = breakable;
     this.powerup = powerup;
@@ -216,25 +216,6 @@ class Paddle extends GameObject{
   constructor ( sprite, x, y ) {
     super(x, y, 100, 16, sprite);
     this.velocity = {x: 100, y: 0};
-  }
-}
-function buildLevel(level){
-  let x = 0, y = 0;
-  for ( let i = 0; i < level.length; i++ ) {
-    for( let j = 0; j < level[i].length; j++ ) {
-      let tlevel = level[i][j];
-      if ( tlevel !== 0 ) {
-        let brickColor = SpriteMap.bricks._map[tlevel - 1];
-        let sprite = SpriteMap.bricks[brickColor];
-        gameObjects.push(
-          new Brick(
-            sprite, 
-            (sprite.w * (j + 1)) - sprite.w, 
-            (sprite.h * (i + 1)) - sprite.h
-          )
-        );
-      }
-    }
   }
 }
 function isObjectInstanceOf(gameObjects, gameObject){
@@ -275,6 +256,25 @@ function drawObjects(){
     gameObjects[i].draw(ctx);
   }
 }
+function buildLevel(level){
+  let x = 0, y = 0;
+  for ( let i = 0; i < level.length; i++ ) {
+    for( let j = 0; j < level[i].length; j++ ) {
+      let tlevel = level[i][j];
+      if ( tlevel !== 0 ) {
+        let brickColor = SpriteMap.bricks._map[tlevel - 1];
+        let sprite = SpriteMap.bricks[brickColor];
+        gameObjects.push(
+          new Brick(
+            sprite, 
+            (sprite.w * (j + 1)) - sprite.w, 
+            (sprite.h * (i + 1)) - sprite.h
+          )
+        );
+      }
+    }
+  }
+}
 function checkCollision(gameObject){
   for ( let i = 0; i < gameObjects.length; i++ ) {
     if ( gameObjects[i] instanceof Brick ) {
@@ -296,7 +296,11 @@ function checkCollision(gameObject){
             gameObject.left >= gameObjects[i].left &&
             gameObject.bottom >= gameObjects[i].top &&
             gameObject.right <= gameObjects[i].right ) {
-              gameObject.velocity.y = -1 * gameObject.velocity.y;
+        if ( gameObject.pos.x < gameObjects[i].pos.x + gameObjects[i].size.w &&
+            gameObject.pos.x > gameObjects[i].pos.x ) {
+          gameObject.pos.y = gameObjects[i].pos.y - gameObject.size.h;
+          gameObject.velocity.y = -1 * gameObject.velocity.y;
+        }
       }      
     }
   }
