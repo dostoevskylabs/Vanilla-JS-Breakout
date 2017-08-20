@@ -1,8 +1,8 @@
 /**
  * GameDev Practice
  *
+ * @author: Andrew Miller 
  * @author: Elijah Seymour
- * @author: Andrew Miller
  * assetLoader from: https://github.com/straker/endless-runner-html5-game/tree/master/part3
  * resizeGame from: someone else (forgot who at the moment)
  **/
@@ -24,7 +24,6 @@ let timestep = 1000 / 60;
 let maxfps = 60;
 // this is used later to control the speed the character's sprite moves at
 let then = Date.now();
-let launched = false;
 window.addEventListener("resize", function(){
   var viewport, newGameWidth, newGameHeight, newGameX, newGameY;
   // Get the dimensions of the viewport
@@ -247,7 +246,18 @@ function isObjectInstanceOf(gameObjects, gameObject){
 }
 function generateObjects(){
   if ( gameObjects.length > 0 ) return;
-  let levelOne = [[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],[2,2,2,5,5,5,10,10,10,12,12,12,13,13,13,14,14,14,0,0],[2,2,2,5,5,5,10,10,10,12,12,12,13,13,13,14,14,14,0,0],[2,2,2,5,5,5,10,10,10,12,12,12,13,13,13,14,14,14,0,0],[2,2,2,5,5,5,10,10,10,12,12,12,13,13,13,14,14,14,0,0],[4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]];
+  let levelOne = [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+    [2,2,2,5,5,5,10,10,10,12,12,12,13,13,13,14,14,14,0,0],
+    [2,2,2,5,5,5,10,10,10,12,12,12,13,13,13,14,14,14,0,0],
+    [2,2,2,5,5,5,10,10,10,12,12,12,13,13,13,14,14,14,0,0],
+    [2,2,2,5,5,5,10,10,10,12,12,12,13,13,13,14,14,14,0,0],
+    [4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+  ];
   gameObjects.push(new Paddle(
     SpriteMap.paddle.normal, 
     (canvas.width / 2) - 35, 
@@ -282,12 +292,12 @@ function checkCollision(gameObject){
         gameObjects.splice(i, 1);
       }
     } else if ( gameObjects[i] instanceof Paddle ) {
-      if ( gameObject.bottom > gameObjects[i].top &&
-            gameObject.top < gameObjects[i].bottom &&
-            gameObject.left < gameObjects[i].right &&
-            gameObject.right > gameObjects[i].left ) {
-        gameObject.velocity.y = -gameObject.velocity.y;
-      }
+      if ( gameObject.top <= gameObjects[i].bottom &&
+            gameObject.left >= gameObjects[i].left &&
+            gameObject.bottom >= gameObjects[i].top &&
+            gameObject.right <= gameObjects[i].right ) {
+              gameObject.velocity.y = -1 * gameObject.velocity.y;
+      }      
     }
   }
 }
@@ -365,7 +375,7 @@ function update(modifier){
   modifier /= 500;
   let ball = isObjectInstanceOf(gameObjects, Ball);
   let paddle = isObjectInstanceOf(gameObjects, Paddle);
-  if ( gameObjects.length < 3 || ball.pos.y > ( paddle.bottom + (paddle.size.h / 2)  ) ) {
+  if ( gameObjects.length < 3 || ball.pos.y > ( paddle.bottom + (paddle.size.h * 2)  ) ) {
     gameObjects = [];
     gameState = 0;
     ball.clear(ctx);
@@ -373,14 +383,17 @@ function update(modifier){
     return startGame();
   }    
   setBounds(paddle);
-  if ( gameState === 1 ) {
-    ball.pos.x = paddle.pos.x + paddle.size.w / 2.5;
-    ball.pos.y = paddle.pos.y - ball.size.h;
-    movePosition(ball, modifier);
-    movePosition(paddle, modifier);
-  } else if ( gameState === 2 ) {
-    setDirection(ball, modifier);
-    movePosition(paddle, modifier);
+  switch ( gameState ) {
+    case 1:
+      ball.pos.x = paddle.pos.x + paddle.size.w / 2.5;
+      ball.pos.y = paddle.pos.y - ball.size.h;
+      movePosition(ball, modifier);
+      movePosition(paddle, modifier);      
+      break;
+    case 2:
+      setDirection(ball, modifier);
+      movePosition(paddle, modifier);      
+      break;
   }
 }
 assetLoader.downloadAll();
