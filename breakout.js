@@ -9,9 +9,9 @@
 // Select our canvas element and set the context to 2dimensional
 const canvas = document.querySelector("#canvas");
 const ctx = canvas.getContext("2d");
-let width = 1280;
+let width = 1250;
 let height = 720;
-let safeWidth = 1280;
+let safeWidth = 1250;
 let safeHeight = 720;
 // this object will store all the directional keys pressed and set
 // their value to true so that we know where the player is moving
@@ -226,18 +226,23 @@ function isObjectInstanceOf(gameObjects, gameObject){
   }
 }
 function generateObjects(){
-  if ( gameObjects.length > 0 ) return;
+  if ( gameState !== 0 ) return;
   let levelOne = [
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
-    [2,2,2,5,5,5,10,10,10,12,12,12,13,13,13,14,14,14,0,0],
-    [2,2,2,5,5,5,10,10,10,12,12,12,13,13,13,14,14,14,0,0],
-    [2,2,2,5,5,5,10,10,10,12,12,12,13,13,13,14,14,14,0,0],
-    [2,2,2,5,5,5,10,10,10,12,12,12,13,13,13,14,14,14,0,0],
-    [4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    [4,0,0,0,0,0,3,0,0,0,0,10,10,10,0,0,0,0,3,0,0,0,0,0,4],
+    [0,4,0,0,0,10,0,3,0,0,0,10,10,10,0,0,0,3,0,10,0,0,0,4,0],
+    [0,0,4,0,10,0,0,13,3,0,0,10,10,10,0,0,3,13,0,0,10,0,4,0,0],
+    [0,0,0,10,0,0,0,13,0,6,6,6,6,6,6,6,0,13,0,0,0,10,0,0,0],
+    [0,0,0,0,0,0,0,13,0,6,6,0,0,0,6,6,0,13,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,13,0,6,6,0,1,0,6,6,0,13,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,13,0,6,6,0,0,0,6,6,0,13,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,13,0,6,6,6,6,6,6,6,0,13,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,13,0,0,0,0,0,0,0,0,0,13,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,13,13,13,13,13,13,13,13,13,13,13,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
   ];
   gameObjects.push(new Paddle(
     SpriteMap.paddle.normal, 
@@ -296,8 +301,8 @@ function checkCollision(gameObject){
             gameObject.left >= gameObjects[i].left &&
             gameObject.bottom >= gameObjects[i].top &&
             gameObject.right <= gameObjects[i].right ) {
-        if ( gameObject.pos.x < gameObjects[i].pos.x + gameObjects[i].size.w &&
-            gameObject.pos.x > gameObjects[i].pos.x ) {
+        if ( gameObject.pos.x <= gameObjects[i].pos.x + gameObjects[i].size.w &&
+            gameObject.pos.x >= gameObjects[i].pos.x ) {
           gameObject.pos.y = gameObjects[i].pos.y - gameObject.size.h;
           gameObject.velocity.y = -1 * gameObject.velocity.y;
         }
@@ -339,14 +344,14 @@ function setDirection(gameObject, modifier){
   gameObject.pos.y += Math.round(gameObject.velocity.y * modifier);
   if ( gameObject.left < 0 ) {
     gameObject.pos.x = 0;
-    gameObject.velocity.x = -gameObject.velocity.x;
+    gameObject.velocity.x = -1 * gameObject.velocity.x;
   } else if ( gameObject.right > canvas.width){
     gameObject.pos.x = canvas.width - gameObject.size.h;
-    gameObject.velocity.x = -gameObject.velocity.x;
+    gameObject.velocity.x = -1 * gameObject.velocity.x;
   }
   if ( gameObject.top < 0 ) {
     gameObject.pos.y = 0;
-    gameObject.velocity.y = -gameObject.velocity.y;
+    gameObject.velocity.y = -1 * gameObject.velocity.y;
   } else if ( gameObject.bottom > canvas.height ) {
     gameObject.pos.y = canvas.height - gameObject.size.h;
   }
