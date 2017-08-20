@@ -293,11 +293,8 @@ function checkCollision(gameObject){
             gameObject.left >= gameObjects[i].left &&
             gameObject.bottom >= gameObjects[i].top &&
             gameObject.right <= gameObjects[i].right ) {
-        if ( gameObject.pos.x <= gameObjects[i].pos.x + gameObjects[i].size.w &&
-            gameObject.pos.x >= gameObjects[i].pos.x ) {
-          gameObject.pos.y = gameObjects[i].pos.y - gameObject.size.h;
-          gameObject.velocity.y = -1 * gameObject.velocity.y;
-        }
+        gameObject.pos.y = gameObjects[i].pos.y - gameObject.size.h;
+        gameObject.velocity.y = -1 * gameObject.velocity.y;
       }      
     }
   }
