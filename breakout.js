@@ -218,12 +218,10 @@ class Paddle extends GameObject{
     this.velocity = {x: 100, y: 0};
   }
 }
-function isObjectInstanceOf(gameObjects, gameObject){
-  for ( let i = 0; i < gameObjects.length; i++ ) {
-    if ( gameObjects[i] instanceof gameObject ) {
+function getFirstInstanceOf(gameObjects, gameObject){
+  for ( let i = 0; i < gameObjects.length; i++ )
+    if ( gameObjects[i] instanceof gameObject )
       return gameObjects[i];
-    }
-  }
 }
 function generateObjects(){
   if ( gameState !== 0 ) return;
@@ -238,11 +236,6 @@ function generateObjects(){
     [0,0,0,0,0,0,0,13,0,6,6,6,6,6,6,6,0,13,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,13,0,0,0,0,0,0,0,0,0,13,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,13,13,13,13,13,13,13,13,13,13,13,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
   ];
   gameObjects.push(new Paddle(
     SpriteMap.paddle.normal, 
@@ -257,9 +250,8 @@ function generateObjects(){
   buildLevel(levelOne);
 }
 function drawObjects(){
-  for ( let i in gameObjects ) {
+  for ( let i in gameObjects )
     gameObjects[i].draw(ctx);
-  }
 }
 function buildLevel(level){
   let x = 0, y = 0;
@@ -313,21 +305,17 @@ function checkCollision(gameObject){
 // define bounds that the player's sprite cannot cross
 // right, left, bottom, top
 function setBounds(gameObject){
-  if ( gameObject.pos.x >= canvas.width - gameObject.size.w ) {
+  if ( gameObject.pos.x >= canvas.width - gameObject.size.w )
     gameObject.pos.x = canvas.width - gameObject.size.w;
-  }
-  if ( gameObject.pos.x <= 0 ) {
+  if ( gameObject.pos.x <= 0 )
     gameObject.pos.x = 1;
-  }
 }
 // update player's position
 function movePosition(gameObject, modifier){
-  if ( 37 in keysDown ) { // player going left
+  if ( 37 in keysDown ) // player going left
     gameObject.pos.x -= Math.round(gameObject.velocity.x * modifier);
-  }
-  if ( 39 in keysDown ) { // player going right
+  if ( 39 in keysDown ) // player going right
     gameObject.pos.x += Math.round(gameObject.velocity.x * modifier);
-  }
   if ( 40 in keysDown ) { // launch ball
     if ( gameObject instanceof Ball ) {
       gameState++;
@@ -366,10 +354,8 @@ function startGame(){
 }
 function gameLoop(){
   let now = Date.now();
-  if ( now < then + (1000 / maxfps) ) {
-    requestAnimationFrame(gameLoop);
-    return;
-  }
+  if ( now < then + (1000 / maxfps) )
+    return requestAnimationFrame(gameLoop);
   let delta = now - then;
   then = now;
   delta += timestep;
@@ -382,9 +368,10 @@ function gameLoop(){
 }
 function update(modifier){
   modifier /= 500;
-  let ball = isObjectInstanceOf(gameObjects, Ball);
-  let paddle = isObjectInstanceOf(gameObjects, Paddle);
+  let ball = getFirstInstanceOf(gameObjects, Ball);
+  let paddle = getFirstInstanceOf(gameObjects, Paddle);
   if ( gameObjects.length < 3 || ball.pos.y > ( paddle.bottom + (paddle.size.h * 2)  ) ) {
+    // game lost or game won
     gameObjects = [];
     gameState = 0;
     ball.clear(ctx);
@@ -392,6 +379,7 @@ function update(modifier){
     return startGame();
   }    
   setBounds(paddle);
+  // manage game state
   switch ( gameState ) {
     case 1:
       ball.pos.x = paddle.pos.x + paddle.size.w / 2.5;
