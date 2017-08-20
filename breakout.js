@@ -224,6 +224,8 @@ function getFirstInstanceOf(gameObjects, gameObject){
       return gameObjects[i];
 }
 function generateObjects(){
+  // if our gameState is not 0 (our initializing state) don't
+  // allow the game to generate the objects again
   if ( gameState !== 0 ) return;
   let levelOne = [
     [4,0,0,0,0,0,3,0,0,0,0,10,10,10,0,0,0,0,3,0,0,0,0,0,4],
@@ -237,6 +239,12 @@ function generateObjects(){
     [0,0,0,0,0,0,0,13,0,0,0,0,0,0,0,0,0,13,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,13,13,13,13,13,13,13,13,13,13,13,0,0,0,0,0,0,0],
   ];
+  // testing win condition
+  // uncomment this and press down it will move the ball directily to the only block on screen
+  // that way you can test if what happens when all blocks are broken
+  /*let levelOne = [
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]
+  ];*/
   gameObjects.push(new Paddle(
     SpriteMap.paddle.normal, 
     (canvas.width / 2) - 35, 
