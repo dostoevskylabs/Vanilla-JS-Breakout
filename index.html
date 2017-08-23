@@ -2,7 +2,8 @@
 <html>
 <head>
   <title>Breakout</title>
-  <link rel="stylesheet" href="main.css" type="text/css" />
+  <link rel="stylesheet" href="main.css?v=1" type="text/css" />
+  <script type="text/javascript" src="fpsmeter.js"></script>
   <script type="text/javascript">
     const assetLoader = function(){
       /**
@@ -90,15 +91,16 @@
        newGameY = (viewport.height - newGameHeight) / 2;
        // Set the new padding of the game so it will be centered
        this.canvas.style.margin = newGameY + "px " + newGameX + "px";
+
     };
   </script>
 </head>
 <body>
-  <button id="newgame">New Game</button>
+  <!--<button id="newgame">New Game</button>
   <div id="panel">
     <div>Bricks Left: <span id="bricks"></span></div>
     <div>Balls: </div><span id="lives"></span></div>
-  </div>
+  </div>-->
   <canvas id="canvas" width="1250" height="720"></canvas>
   <script type="text/javascript" src="main.js"></script>
 </body>
