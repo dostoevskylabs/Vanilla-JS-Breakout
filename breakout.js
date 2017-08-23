@@ -119,16 +119,18 @@ class Brick extends GameObject{
    * @param {Number} type - type of brick
    * @param {Number} power - power up
    * @param {Bool} breakable - is brick breakable? true/fase
-   * @param {Number} bp - hitpoints
+   * @param {String} color - RGB Hex value
    * 
    * Create a new Brick that extends the GameObject class
    */
-  constructor(sprite, x, y, type, power, breakable, hp){
+  constructor(sprite, x, y, type, power, breakable, color){
     super(x, y, sprite.w, sprite.h, sprite);
+    let baseHp = {normal: 0, star: 0, shield1: 1, shield2: 2, shield3: 3};
+    this.color = color;
     this.breakable = breakable;
     this.power = power;
     this.type = type;
-    this._hp = hp;
+    this.hp = baseHp[this.type];
   }
   /**
    * hit()
@@ -136,12 +138,14 @@ class Brick extends GameObject{
    * Do hit stuff
    */
    hit(){
-     if(this.type == 'normal' || this.type == 'star'){
+     if ( this.type == 'normal' || this.type == 'star' ) {
        // These types only ever have 0HP, break block
-     }else{
+       // Something should go here, not sure what yet.. lol
+     } else {
        let typeMap = ['normal', 'shield1', 'shield2', 'shield3'];
        this.hp -= 1;
        this.type = typeMap[this.hp];
+       this.sprite = SpriteMap.bricks[this.sprite.w][this.type];
      }
    }
 
@@ -153,9 +157,9 @@ class Brick extends GameObject{
    */
   draw(ctx){
     // Draw Background Color
-    ctx.fillStyle = this.sprite.color;
+    ctx.fillStyle = this.color;
     ctx.fillRect(this.pos.x + 1, this.pos.y + 1, this.size.w - 2, this.size.h -2);
-    // Call Super.Draw() to draw overlay
+    // Call super.draw() to draw overlay
     super.draw(ctx);
   }
 
@@ -267,22 +271,15 @@ class LevelManager{
    * Bricks are for parsing
    */
   parseBrick(brickObj){
-    //[{"c":"#d93333","t":0,"b":1,"p":0,"s":1,"x":50,"y":100},
-    //sprite, x, y, health = 1, breakable = true, powerup = 0
-    
     let typeMap = ["normal", "shield1", "shield2", "shield3", "star"];
     let powerMap = ["none", "slow", "fast", "expand", "contract", "star"];
-    
     let size = brickObj.s == 0 ? 'half' : 'full';
     let hp = brickObj.t > 3 ? 0 : brickObj.t;
     let type = typeMap[brickObj.t];
     let power = powerMap[brickObj.p];
     let breakable = brickObj.b == 1 ? true : false;
     let sprite = SpriteMap.bricks[size][type];
-    sprite.color = brickObj.color;
-    
-    return new tBrick(sprite, brickObj.x, brickObj.y, type, power, breakable, hp);
-    
+    return new Brick(sprite, brickObj.x, brickObj.y, type, power, breakable, brickObj.c);
   }
   /**
    * add()
@@ -324,52 +321,105 @@ class Game{
     this.playArea = { x: 0, y: 0, w: 0, h: 0 };
     this.ball = undefined;
     this.paddle = undefined;
-    this.bricks = [];
+    this.frame = undefined;
+    //this.bricks = [];
     this.gameState = 0;
   }
   /**
-   * reset()
+   * init()
    *
-   * Reset our game to a default state so that we can start a new game
+   * Initialize our game to a default state so that we can start a new game
    */
-  reset(){
+  init(){
     // reset our LevelManager
     this.lm.reset();
     // add some levels
-    this.lm.add([[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]]);
-    this.lm.add([[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2]]);
-    this.lm.add([[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3]]);
-    this.lm.add([[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4]]);    
-    this.lm.add([[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5]]);  
-    // clear our ball and paddle cause we are gonna redraw
-    this.ball.clear(this.cm.ctx);
-    this.paddle.clear(this.cm.ctx);
-    // set to undefined
-    this.ball = undefined;
-    this.paddle = undefined;
-    // reset our bricks array
-    this.bricks = [];
-    // reset gameState as we will be stepping through start
-    this.gameState = 0;
-    this.start();
-  }
-  /**
-   * nextLevel()
-   *
-   * Cleanly iterate through levels using LevelManager class
-   */
-  nextLevel(){
-    // clear the ball and paddle from the screen since we are going to redraw it
-    this.ball.clear(this.cm.ctx);
-    this.paddle.clear(this.cm.ctx);
-    // set undefined, why? whynot
-    this.ball = undefined;
-    this.paddle = undefined;
-    // reset our gameState as we are stepping back through start()
-    this.gameState = 0;
-    // tell the LevelManager to remove the current level and get ready for the next
-    this.lm.next();
-    // start-o!
+    this.lm.add([{"c":"#997377","t":0,"b":1,"p":0,"s":1,"x":1200,"y":50}]);
+    this.lm.add([
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":50,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":100,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":150,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":200,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":250,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":300,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":350,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":400,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":450,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":500,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":550,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":600,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":650,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":700,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":750,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":800,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":850,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":900,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":950,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":1000,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":1050,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":1100,"y":50},
+      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":1150,"y":50},
+      {"c":"#d93333","t":0,"b":1,"p":0,"s":1,"x":50,"y":175},
+      {"c":"#d93333","t":0,"b":1,"p":0,"s":1,"x":100,"y":175},
+      {"c":"#d9337d","t":1,"b":1,"p":0,"s":1,"x":175,"y":175},
+      {"c":"#d9337d","t":1,"b":1,"p":0,"s":1,"x":225,"y":175},
+      {"c":"#d933c0","t":2,"b":1,"p":0,"s":1,"x":300,"y":175},
+      {"c":"#d933c0","t":2,"b":1,"p":0,"s":1,"x":350,"y":175},
+      {"c":"#a033d9","t":3,"b":1,"p":0,"s":1,"x":425,"y":175},
+      {"c":"#a033d9","t":3,"b":1,"p":0,"s":1,"x":475,"y":175},
+      {"c":"#3b33d9","t":4,"b":1,"p":0,"s":1,"x":550,"y":175},
+      {"c":"#3b33d9","t":4,"b":1,"p":0,"s":1,"x":600,"y":175},
+      {"c":"#3362d9","t":0,"b":1,"p":0,"s":0,"x":675,"y":175},
+      {"c":"#3362d9","t":0,"b":1,"p":0,"s":0,"x":700,"y":175},
+      {"c":"#339cd9","t":1,"b":1,"p":0,"s":0,"x":750,"y":175},
+      {"c":"#339cd9","t":1,"b":1,"p":0,"s":0,"x":775,"y":175},
+      {"c":"#33cfd9","t":2,"b":1,"p":0,"s":0,"x":825,"y":175},
+      {"c":"#33cfd9","t":2,"b":1,"p":0,"s":0,"x":850,"y":175},
+      {"c":"#33d98d","t":3,"b":1,"p":0,"s":0,"x":900,"y":175},
+      {"c":"#33d98d","t":3,"b":1,"p":0,"s":0,"x":925,"y":175},
+      {"c":"#33d93f","t":4,"b":1,"p":0,"s":0,"x":975,"y":175},
+      {"c":"#33d93f","t":4,"b":1,"p":0,"s":0,"x":1000,"y":175},
+      {"c":"#d93333","t":0,"b":1,"p":0,"s":1,"x":50,"y":200},
+      {"c":"#d93333","t":0,"b":1,"p":0,"s":1,"x":100,"y":200},
+      {"c":"#d9337d","t":1,"b":1,"p":0,"s":1,"x":175,"y":200},
+      {"c":"#d9337d","t":1,"b":1,"p":0,"s":1,"x":225,"y":200},
+      {"c":"#d933c0","t":2,"b":1,"p":0,"s":1,"x":300,"y":200},
+      {"c":"#d933c0","t":2,"b":1,"p":0,"s":1,"x":350,"y":200},
+      {"c":"#a033d9","t":3,"b":1,"p":0,"s":1,"x":425,"y":200},
+      {"c":"#a033d9","t":3,"b":1,"p":0,"s":1,"x":475,"y":200},
+      {"c":"#3b33d9","t":4,"b":1,"p":0,"s":1,"x":550,"y":200},
+      {"c":"#3b33d9","t":4,"b":1,"p":0,"s":1,"x":600,"y":200},
+      {"c":"#3362d9","t":0,"b":1,"p":0,"s":0,"x":675,"y":200},
+      {"c":"#3362d9","t":0,"b":1,"p":0,"s":0,"x":700,"y":200},
+      {"c":"#339cd9","t":1,"b":1,"p":0,"s":0,"x":750,"y":200},
+      {"c":"#339cd9","t":1,"b":1,"p":0,"s":0,"x":775,"y":200},
+      {"c":"#33cfd9","t":2,"b":1,"p":0,"s":0,"x":825,"y":200},
+      {"c":"#33cfd9","t":2,"b":1,"p":0,"s":0,"x":850,"y":200},
+      {"c":"#33d98d","t":3,"b":1,"p":0,"s":0,"x":900,"y":200},
+      {"c":"#33d98d","t":3,"b":1,"p":0,"s":0,"x":925,"y":200},
+      {"c":"#33d93f","t":4,"b":1,"p":0,"s":0,"x":975,"y":200},
+      {"c":"#33d93f","t":4,"b":1,"p":0,"s":0,"x":1000,"y":200},
+      {"c":"#d93333","t":0,"b":1,"p":0,"s":1,"x":50,"y":225},
+      {"c":"#d93333","t":0,"b":1,"p":0,"s":1,"x":100,"y":225},
+      {"c":"#d9337d","t":1,"b":1,"p":0,"s":1,"x":175,"y":225},
+      {"c":"#d9337d","t":1,"b":1,"p":0,"s":1,"x":225,"y":225},
+      {"c":"#d933c0","t":2,"b":1,"p":0,"s":1,"x":300,"y":225},
+      {"c":"#d933c0","t":2,"b":1,"p":0,"s":1,"x":350,"y":225},
+      {"c":"#a033d9","t":3,"b":1,"p":0,"s":1,"x":425,"y":225},
+      {"c":"#a033d9","t":3,"b":1,"p":0,"s":1,"x":475,"y":225},
+      {"c":"#3b33d9","t":4,"b":1,"p":0,"s":1,"x":550,"y":225},
+      {"c":"#3b33d9","t":4,"b":1,"p":0,"s":1,"x":600,"y":225},
+      {"c":"#3362d9","t":0,"b":1,"p":0,"s":0,"x":675,"y":225},
+      {"c":"#3362d9","t":0,"b":1,"p":0,"s":0,"x":700,"y":225},
+      {"c":"#339cd9","t":1,"b":1,"p":0,"s":0,"x":750,"y":225},
+      {"c":"#339cd9","t":1,"b":1,"p":0,"s":0,"x":775,"y":225},
+      {"c":"#33cfd9","t":2,"b":1,"p":0,"s":0,"x":825,"y":225},
+      {"c":"#33cfd9","t":2,"b":1,"p":0,"s":0,"x":850,"y":225},
+      {"c":"#33d98d","t":3,"b":1,"p":0,"s":0,"x":900,"y":225},
+      {"c":"#33d98d","t":3,"b":1,"p":0,"s":0,"x":925,"y":225},
+      {"c":"#33d93f","t":4,"b":1,"p":0,"s":0,"x":975,"y":225},
+      {"c":"#33d93f","t":4,"b":1,"p":0,"s":0,"x":1000,"y":225}
+    ]);
     this.start();
   }
   /**
@@ -378,13 +428,12 @@ class Game{
    * Start the level
    */
   start(){
+    if ( this.frame !== undefined ) window.cancelAnimationFrame(this.frame);
+    this.gameState = 0;
+    this.cm.ctx.clearRect(0, 0, this.cm.canvas.width, this.cm.canvas.height);
     this.ball = new Ball(SpriteMap.ball.fast, this.cm.canvas.width / 2, this.cm.canvas.height - 190);
     this.paddle = new Paddle(SpriteMap.paddle.normal,(this.cm.canvas.width / 2) - 35,(this.cm.canvas.height - 160));
     this.cm.ctx.drawImage(SpriteMap.sheet, 0, 240, 350, 150, (this.cm.canvas.width / 2) - 175,(this.cm.canvas.height / 2) - 75, 350, 150);
-    // this.lm.level will always point to index 0 of
-    // our levels array from our LevelManager
-    // unless there is no level left then it will return false
-    this.buildLevel(this.lm.level);
     this.gameState++;
     this.loop();
   }
@@ -395,8 +444,10 @@ class Game{
    */
   loop(){
     let now = performance.now() || Date.now();
-    if ( now < this.then + (1000 / this.maxfps) )
-      return window.requestAnimationFrame(this.loop.bind(this));
+    if ( now < this.then + (1000 / this.maxfps) ){
+      this.frame = window.requestAnimationFrame(this.loop.bind(this));
+      return this.frame;
+    }
     let delta = now - this.then;
     this.then = now;
     delta += this.timestep;
@@ -405,7 +456,8 @@ class Game{
       delta -= this.timestep;
     }
     this.render();
-    return window.requestAnimationFrame(this.loop.bind(this));
+    this.frame = window.requestAnimationFrame(this.loop.bind(this));
+    return this.frame;
   }
   /**
    * update()
@@ -415,19 +467,20 @@ class Game{
    */
   update(modifier){
     modifier /= 500;
-    if ( this.bricks.length === 0 ) {
+    if ( this.lm.level.length === 0 ) {
       // if player won
       if ( this.lm.level === false ) {
         // no levels left start game over
-        this.reset();
+        this.init();
       } else {
         // next level!!
-        this.nextLevel();
+        this.lm.next();
+        this.start();
       }
     } 
     if ( this.ball.pos.y > this.paddle.bottom + (this.paddle.size.h * 2) ) {
       // player lost, start game over
-      this.reset();
+      this.init();
     }
     this.setBounds(this.paddle);
     // manage game state
@@ -455,16 +508,19 @@ class Game{
           this.ball.pos.y = this.paddle.pos.y - this.ball.size.h;
           this.ball.velocity.y = -1 *this.ball.velocity.y;
         }
-        for ( let i = 0; i < this.bricks.length; i++ ) {
-          if ( this.ball.checkCollision(this.bricks[i]) instanceof Brick ) {
-            this.bricks[i].clear(this.cm.ctx);
-            this.bricks.splice(i, 1);
+        for ( let i = 0; i < this.lm.level.length; i++ ) {
+          if ( this.ball.checkCollision(this.lm.level[i]) instanceof Brick) {
+            if(this.lm.level[i].breakable){
+              this.lm.level[i].clear(this.cm.ctx);
+              this.lm.level.splice(i, 1);
+            }
           }
         }
         this.paddle.move(modifier);
         break;
     }
   }
+  
   /**
    * render()
    *
@@ -473,7 +529,7 @@ class Game{
   render(){
     this.ball.draw(this.cm.ctx);
     this.paddle.draw(this.cm.ctx);
-    for ( let brick of this.bricks )
+    for ( let brick of this.lm.level )
       brick.draw(this.cm.ctx);
   }
   /**
@@ -488,28 +544,7 @@ class Game{
     if ( gameObject.pos.x <= 0 )
       gameObject.pos.x = 1;
   }
-  /**
-   * buildLevel()
-   * @param {Array} level - A multi-dimension array of level data
-   *
-   * Builds a level from an array
-   */
-  buildLevel(level){
-    for ( let i = 0; i < level.length; i++ ) {
-      for( let j = 0; j < level[i].length; j++ ) {
-        let tlevel = level[i][j];
-        if ( tlevel !== 0 ) {
-          let brickColor = SpriteMap.bricks._map[tlevel - 1];
-          let sprite = SpriteMap.bricks[brickColor];
-          this.bricks.push(new Brick(
-              sprite,
-              (sprite.w * (j + 1)) - sprite.w,
-              (sprite.h * (i + 1)) - sprite.h
-          ));
-        }
-      }
-    }
-  }
+
   /**
    * tmpWallCollision()
    *
@@ -532,42 +567,6 @@ class Game{
   }  
 }
 /***************************************************************************************************************************/
-/*
-const SpriteMap = {
-  sheet: undefined,
-  bricks: {
-    _size: {w: 50, h: 30},
-    _map: ["red", "rose", "pink", "purple", "berry",
-           "blue", "sapphire", "sky", "arctic", "seafoam",
-           "green", "olive", "yellow", "orange", "white"],
-    red: {x: 0, y: 0, w: 50, h: 30},
-    rose: {x: 50, y: 0, w: 50, h: 30},
-    pink: {x: 100, y: 0, w: 50, h: 30},
-    purple: {x: 150, y: 0, w: 50, h: 30},
-    berry: {x: 200, y: 0, w: 50, h: 30},
-    blue: {x: 250, y: 0, w: 50, h: 30},
-    sapphire: {x: 300, y: 0, w: 50, h: 30},
-    sky: {x: 0, y: 0, w: 50, h: 30},
-    arctic: {x: 50, y: 30, w: 50, h: 30},
-    seafoam: {x: 100, y: 30, w: 50, h: 30},
-    green: {x: 150, y: 30, w: 50, h: 30},
-    olive: {x: 200, y: 30, w: 50, h: 30},
-    yellow: {x: 250, y: 30, w: 50, h: 30},
-    orange: {x: 300, y: 30, w: 50, h: 30},
-    white: {x: 350, y: 30, w: 50, h: 30},
-  },
-  paddle: {
-    small: {x: 1, y: 175, w: 50, h: 60},
-    normal: {x: 1, y: 191, w: 100, h: 16},
-    large: {x: 1, y: 207, w: 200, h: 16}
-  },
-  ball: {
-    normal: {x: 0, y: 120, w: 24, h: 24},
-    slow: {x: 24, y: 120, w: 24, h: 24},
-    fast: {x: 48, y: 120, w: 24, h: 24}
-  }
-};
-*/
 const SpriteMap = {
   sheet: undefined,
   logo: {x: 50, y: 0, w:320, h: 130},
@@ -580,11 +579,11 @@ const SpriteMap = {
       star: {x: 0, y: 25, w: 50, h: 25}
     },
     half: {
-      normal: {x: 100, y: 25, w: 50, h: 25},
-      shield1: {x: 272, y: 0, w: 50, h: 25},
-      shield2: {x: 50, y: 25, w: 50, h: 25},
-      shield3: {x: 75, y: 25, w: 50, h: 25},
-      star: {x: 125, y: 25, w: 50, h: 25}
+      normal: {x: 100, y: 25, w: 25, h: 25},
+      shield1: {x: 272, y: 0, w: 25, h: 25},
+      shield2: {x: 50, y: 25, w: 25, h: 25},
+      shield3: {x: 75, y: 25, w: 25, h: 25},
+      star: {x: 125, y: 25, w: 25, h: 25}
     }
   },
   powers:{
@@ -612,7 +611,7 @@ let breakout = new Game(canvasManager, levelManager);
 let keysDown = {};
 assetLoader.finished = function(){ /* global assetLoader */
   SpriteMap.sheet = assetLoader.imgs.ts;
-  breakout.start();
+  breakout.init();
 };
 assetLoader.downloadAll();
 /***************************************************************************************************************************/
