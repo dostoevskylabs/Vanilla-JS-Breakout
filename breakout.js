@@ -138,17 +138,13 @@ class Brick extends GameObject{
    * Do hit stuff
    */
    hit(){
-     if ( this.type == 'normal' || this.type == 'star' ) {
-       // These types only ever have 0HP, break block
-       // Something should go here, not sure what yet.. lol
-     } else {
+     if ( this.type != 'normal' && this.type != 'star' ) {
        let typeMap = ['normal', 'shield1', 'shield2', 'shield3'];
        this.hp -= 1;
        this.type = typeMap[this.hp];
-       this.sprite = SpriteMap.bricks[this.sprite.w][this.type];
+       this.sprite = SpriteMap.bricks[this.sprite.w == 50 ? 'full' : 'half'][this.type];
      }
    }
-
   /**
    * draw()
    * @param {Object} ctx - canvas context
@@ -177,6 +173,8 @@ class Ball extends GameObject{
   constructor(sprite, x, y ){
     super(x, y, 20, 20, sprite);
     this.velocity = {x: 50, y: -50};
+    this.lives = 3;
+    this.launched = false;
   }
   /**
    * update()
@@ -197,15 +195,31 @@ class Ball extends GameObject{
   checkCollision(gameObject){
     if ( super.checkCollision(gameObject) ) {
       if(gameObject instanceof Brick){
-        if ( this.pos.y < gameObject.pos.y - (gameObject.size.h / 2) ||
-              this.pos.y > gameObject.pos.y + (gameObject.size.h / 2) ) {
-          this.velocity.y =  -1 * this.velocity.y;
-        } else {
-          this.velocity.x = -1 * this.velocity.x;
+        if ( this.pos.y < gameObject.pos.y + gameObject.size.h - (gameObject.size.h / 2) ) {
+          this.pos.y = gameObject.pos.y - gameObject.size.h - 1;
+          this.velocity.y = -1 * this.velocity.y;
+        } else if ( this.pos.y > gameObject.pos.y + gameObject.size.h - (gameObject.size.h / 2) ) {
+          this.pos.y = gameObject.pos.y + gameObject.size.h + 1;
+          this.velocity.y = -1 * this.velocity.y;
+        }
+        if ( this.pos.x < gameObject.pos.x + gameObject.size.w - (gameObject.size.w / 2) ) {
+          this.pos.x = gameObject.pos.x - 1;          
+        } else if ( this.pos.x > gameObject.pos.x + gameObject.size.w - (gameObject.size.w / 2) ) {
+          this.pos.x = gameObject.pos.x + gameObject.size.w + 1;
         }
       }
       return gameObject;
     }
+  }
+  /**
+   * bindsTo()
+   * @param {Object} gameObject - any game object
+   * 
+   * Binds ball to any GameObject
+   */
+  bindsTo(gameObject){
+    this.pos.x = gameObject.pos.x + gameObject.size.w / 2.5;
+    this.pos.y = gameObject.pos.y - this.size.h;    
   }
 }
 class Paddle extends GameObject{
@@ -322,7 +336,6 @@ class Game{
     this.ball = undefined;
     this.paddle = undefined;
     this.frame = undefined;
-    //this.bricks = [];
     this.gameState = 0;
   }
   /**
@@ -331,96 +344,121 @@ class Game{
    * Initialize our game to a default state so that we can start a new game
    */
   init(){
-    // reset our LevelManager
-    this.lm.reset();
-    // add some levels
-    this.lm.add([{"c":"#997377","t":0,"b":1,"p":0,"s":1,"x":1200,"y":50}]);
-    this.lm.add([
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":50,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":100,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":150,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":200,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":250,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":300,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":350,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":400,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":450,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":500,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":550,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":600,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":650,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":700,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":750,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":800,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":850,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":900,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":950,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":1000,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":1050,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":1100,"y":50},
-      {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":1150,"y":50},
-      {"c":"#d93333","t":0,"b":1,"p":0,"s":1,"x":50,"y":175},
-      {"c":"#d93333","t":0,"b":1,"p":0,"s":1,"x":100,"y":175},
-      {"c":"#d9337d","t":1,"b":1,"p":0,"s":1,"x":175,"y":175},
-      {"c":"#d9337d","t":1,"b":1,"p":0,"s":1,"x":225,"y":175},
-      {"c":"#d933c0","t":2,"b":1,"p":0,"s":1,"x":300,"y":175},
-      {"c":"#d933c0","t":2,"b":1,"p":0,"s":1,"x":350,"y":175},
-      {"c":"#a033d9","t":3,"b":1,"p":0,"s":1,"x":425,"y":175},
-      {"c":"#a033d9","t":3,"b":1,"p":0,"s":1,"x":475,"y":175},
-      {"c":"#3b33d9","t":4,"b":1,"p":0,"s":1,"x":550,"y":175},
-      {"c":"#3b33d9","t":4,"b":1,"p":0,"s":1,"x":600,"y":175},
-      {"c":"#3362d9","t":0,"b":1,"p":0,"s":0,"x":675,"y":175},
-      {"c":"#3362d9","t":0,"b":1,"p":0,"s":0,"x":700,"y":175},
-      {"c":"#339cd9","t":1,"b":1,"p":0,"s":0,"x":750,"y":175},
-      {"c":"#339cd9","t":1,"b":1,"p":0,"s":0,"x":775,"y":175},
-      {"c":"#33cfd9","t":2,"b":1,"p":0,"s":0,"x":825,"y":175},
-      {"c":"#33cfd9","t":2,"b":1,"p":0,"s":0,"x":850,"y":175},
-      {"c":"#33d98d","t":3,"b":1,"p":0,"s":0,"x":900,"y":175},
-      {"c":"#33d98d","t":3,"b":1,"p":0,"s":0,"x":925,"y":175},
-      {"c":"#33d93f","t":4,"b":1,"p":0,"s":0,"x":975,"y":175},
-      {"c":"#33d93f","t":4,"b":1,"p":0,"s":0,"x":1000,"y":175},
-      {"c":"#d93333","t":0,"b":1,"p":0,"s":1,"x":50,"y":200},
-      {"c":"#d93333","t":0,"b":1,"p":0,"s":1,"x":100,"y":200},
-      {"c":"#d9337d","t":1,"b":1,"p":0,"s":1,"x":175,"y":200},
-      {"c":"#d9337d","t":1,"b":1,"p":0,"s":1,"x":225,"y":200},
-      {"c":"#d933c0","t":2,"b":1,"p":0,"s":1,"x":300,"y":200},
-      {"c":"#d933c0","t":2,"b":1,"p":0,"s":1,"x":350,"y":200},
-      {"c":"#a033d9","t":3,"b":1,"p":0,"s":1,"x":425,"y":200},
-      {"c":"#a033d9","t":3,"b":1,"p":0,"s":1,"x":475,"y":200},
-      {"c":"#3b33d9","t":4,"b":1,"p":0,"s":1,"x":550,"y":200},
-      {"c":"#3b33d9","t":4,"b":1,"p":0,"s":1,"x":600,"y":200},
-      {"c":"#3362d9","t":0,"b":1,"p":0,"s":0,"x":675,"y":200},
-      {"c":"#3362d9","t":0,"b":1,"p":0,"s":0,"x":700,"y":200},
-      {"c":"#339cd9","t":1,"b":1,"p":0,"s":0,"x":750,"y":200},
-      {"c":"#339cd9","t":1,"b":1,"p":0,"s":0,"x":775,"y":200},
-      {"c":"#33cfd9","t":2,"b":1,"p":0,"s":0,"x":825,"y":200},
-      {"c":"#33cfd9","t":2,"b":1,"p":0,"s":0,"x":850,"y":200},
-      {"c":"#33d98d","t":3,"b":1,"p":0,"s":0,"x":900,"y":200},
-      {"c":"#33d98d","t":3,"b":1,"p":0,"s":0,"x":925,"y":200},
-      {"c":"#33d93f","t":4,"b":1,"p":0,"s":0,"x":975,"y":200},
-      {"c":"#33d93f","t":4,"b":1,"p":0,"s":0,"x":1000,"y":200},
-      {"c":"#d93333","t":0,"b":1,"p":0,"s":1,"x":50,"y":225},
-      {"c":"#d93333","t":0,"b":1,"p":0,"s":1,"x":100,"y":225},
-      {"c":"#d9337d","t":1,"b":1,"p":0,"s":1,"x":175,"y":225},
-      {"c":"#d9337d","t":1,"b":1,"p":0,"s":1,"x":225,"y":225},
-      {"c":"#d933c0","t":2,"b":1,"p":0,"s":1,"x":300,"y":225},
-      {"c":"#d933c0","t":2,"b":1,"p":0,"s":1,"x":350,"y":225},
-      {"c":"#a033d9","t":3,"b":1,"p":0,"s":1,"x":425,"y":225},
-      {"c":"#a033d9","t":3,"b":1,"p":0,"s":1,"x":475,"y":225},
-      {"c":"#3b33d9","t":4,"b":1,"p":0,"s":1,"x":550,"y":225},
-      {"c":"#3b33d9","t":4,"b":1,"p":0,"s":1,"x":600,"y":225},
-      {"c":"#3362d9","t":0,"b":1,"p":0,"s":0,"x":675,"y":225},
-      {"c":"#3362d9","t":0,"b":1,"p":0,"s":0,"x":700,"y":225},
-      {"c":"#339cd9","t":1,"b":1,"p":0,"s":0,"x":750,"y":225},
-      {"c":"#339cd9","t":1,"b":1,"p":0,"s":0,"x":775,"y":225},
-      {"c":"#33cfd9","t":2,"b":1,"p":0,"s":0,"x":825,"y":225},
-      {"c":"#33cfd9","t":2,"b":1,"p":0,"s":0,"x":850,"y":225},
-      {"c":"#33d98d","t":3,"b":1,"p":0,"s":0,"x":900,"y":225},
-      {"c":"#33d98d","t":3,"b":1,"p":0,"s":0,"x":925,"y":225},
-      {"c":"#33d93f","t":4,"b":1,"p":0,"s":0,"x":975,"y":225},
-      {"c":"#33d93f","t":4,"b":1,"p":0,"s":0,"x":1000,"y":225}
-    ]);
-    this.start();
+    switch ( this.gameState ) {
+      // splash
+      case 0:
+        console.log("splash");
+        this.gameState++;
+        this.init();
+      break;
+      // menu
+      case 1:
+        console.log("menu");
+        this.gameState++;
+        this.init();
+      break;
+      // game
+      case 2:
+        console.log("in game");
+        this.then = performance.now() || Date.now();
+        // reset our LevelManager
+        this.lm.reset();
+        // add some levels
+        this.lm.add([{"c":"#997377","t":0,"b":1,"p":0,"s":1,"x":1200,"y":50}]);
+        this.lm.add([
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":50,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":100,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":150,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":200,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":250,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":300,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":350,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":400,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":450,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":500,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":550,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":600,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":650,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":700,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":750,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":800,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":850,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":900,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":950,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":1000,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":1050,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":1100,"y":50},
+          {"c":"#997377","t":0,"b":0,"p":0,"s":1,"x":1150,"y":50},
+          {"c":"#d93333","t":0,"b":1,"p":0,"s":1,"x":50,"y":175},
+          {"c":"#d93333","t":0,"b":1,"p":0,"s":1,"x":100,"y":175},
+          {"c":"#d9337d","t":1,"b":1,"p":0,"s":1,"x":175,"y":175},
+          {"c":"#d9337d","t":1,"b":1,"p":0,"s":1,"x":225,"y":175},
+          {"c":"#d933c0","t":2,"b":1,"p":0,"s":1,"x":300,"y":175},
+          {"c":"#d933c0","t":2,"b":1,"p":0,"s":1,"x":350,"y":175},
+          {"c":"#a033d9","t":3,"b":1,"p":0,"s":1,"x":425,"y":175},
+          {"c":"#a033d9","t":3,"b":1,"p":0,"s":1,"x":475,"y":175},
+          {"c":"#3b33d9","t":4,"b":1,"p":0,"s":1,"x":550,"y":175},
+          {"c":"#3b33d9","t":4,"b":1,"p":0,"s":1,"x":600,"y":175},
+          {"c":"#3362d9","t":0,"b":1,"p":0,"s":0,"x":675,"y":175},
+          {"c":"#3362d9","t":0,"b":1,"p":0,"s":0,"x":700,"y":175},
+          {"c":"#339cd9","t":1,"b":1,"p":0,"s":0,"x":750,"y":175},
+          {"c":"#339cd9","t":1,"b":1,"p":0,"s":0,"x":775,"y":175},
+          {"c":"#33cfd9","t":2,"b":1,"p":0,"s":0,"x":825,"y":175},
+          {"c":"#33cfd9","t":2,"b":1,"p":0,"s":0,"x":850,"y":175},
+          {"c":"#33d98d","t":3,"b":1,"p":0,"s":0,"x":900,"y":175},
+          {"c":"#33d98d","t":3,"b":1,"p":0,"s":0,"x":925,"y":175},
+          {"c":"#33d93f","t":4,"b":1,"p":0,"s":0,"x":975,"y":175},
+          {"c":"#33d93f","t":4,"b":1,"p":0,"s":0,"x":1000,"y":175},
+          {"c":"#d93333","t":0,"b":1,"p":0,"s":1,"x":50,"y":200},
+          {"c":"#d93333","t":0,"b":1,"p":0,"s":1,"x":100,"y":200},
+          {"c":"#d9337d","t":1,"b":1,"p":0,"s":1,"x":175,"y":200},
+          {"c":"#d9337d","t":1,"b":1,"p":0,"s":1,"x":225,"y":200},
+          {"c":"#d933c0","t":2,"b":1,"p":0,"s":1,"x":300,"y":200},
+          {"c":"#d933c0","t":2,"b":1,"p":0,"s":1,"x":350,"y":200},
+          {"c":"#a033d9","t":3,"b":1,"p":0,"s":1,"x":425,"y":200},
+          {"c":"#a033d9","t":3,"b":1,"p":0,"s":1,"x":475,"y":200},
+          {"c":"#3b33d9","t":4,"b":1,"p":0,"s":1,"x":550,"y":200},
+          {"c":"#3b33d9","t":4,"b":1,"p":0,"s":1,"x":600,"y":200},
+          {"c":"#3362d9","t":0,"b":1,"p":0,"s":0,"x":675,"y":200},
+          {"c":"#3362d9","t":0,"b":1,"p":0,"s":0,"x":700,"y":200},
+          {"c":"#339cd9","t":1,"b":1,"p":0,"s":0,"x":750,"y":200},
+          {"c":"#339cd9","t":1,"b":1,"p":0,"s":0,"x":775,"y":200},
+          {"c":"#33cfd9","t":2,"b":1,"p":0,"s":0,"x":825,"y":200},
+          {"c":"#33cfd9","t":2,"b":1,"p":0,"s":0,"x":850,"y":200},
+          {"c":"#33d98d","t":3,"b":1,"p":0,"s":0,"x":900,"y":200},
+          {"c":"#33d98d","t":3,"b":1,"p":0,"s":0,"x":925,"y":200},
+          {"c":"#33d93f","t":4,"b":1,"p":0,"s":0,"x":975,"y":200},
+          {"c":"#33d93f","t":4,"b":1,"p":0,"s":0,"x":1000,"y":200},
+          {"c":"#d93333","t":0,"b":1,"p":0,"s":1,"x":50,"y":225},
+          {"c":"#d93333","t":0,"b":1,"p":0,"s":1,"x":100,"y":225},
+          {"c":"#d9337d","t":1,"b":1,"p":0,"s":1,"x":175,"y":225},
+          {"c":"#d9337d","t":1,"b":1,"p":0,"s":1,"x":225,"y":225},
+          {"c":"#d933c0","t":2,"b":1,"p":0,"s":1,"x":300,"y":225},
+          {"c":"#d933c0","t":2,"b":1,"p":0,"s":1,"x":350,"y":225},
+          {"c":"#a033d9","t":3,"b":1,"p":0,"s":1,"x":425,"y":225},
+          {"c":"#a033d9","t":3,"b":1,"p":0,"s":1,"x":475,"y":225},
+          {"c":"#3b33d9","t":4,"b":1,"p":0,"s":1,"x":550,"y":225},
+          {"c":"#3b33d9","t":4,"b":1,"p":0,"s":1,"x":600,"y":225},
+          {"c":"#3362d9","t":0,"b":1,"p":0,"s":0,"x":675,"y":225},
+          {"c":"#3362d9","t":0,"b":1,"p":0,"s":0,"x":700,"y":225},
+          {"c":"#339cd9","t":1,"b":1,"p":0,"s":0,"x":750,"y":225},
+          {"c":"#339cd9","t":1,"b":1,"p":0,"s":0,"x":775,"y":225},
+          {"c":"#33cfd9","t":2,"b":1,"p":0,"s":0,"x":825,"y":225},
+          {"c":"#33cfd9","t":2,"b":1,"p":0,"s":0,"x":850,"y":225},
+          {"c":"#33d98d","t":3,"b":1,"p":0,"s":0,"x":900,"y":225},
+          {"c":"#33d98d","t":3,"b":1,"p":0,"s":0,"x":925,"y":225},
+          {"c":"#33d93f","t":4,"b":1,"p":0,"s":0,"x":975,"y":225},
+          {"c":"#33d93f","t":4,"b":1,"p":0,"s":0,"x":1000,"y":225}
+        ]);
+        this.start();        
+      break;
+      // gameover
+      case 3:
+        console.log("gameover");
+        this.gameState = 2;
+        this.init();
+      break;
+    }
   }
   /**
    * start()
@@ -429,12 +467,37 @@ class Game{
    */
   start(){
     if ( this.frame !== undefined ) window.cancelAnimationFrame(this.frame);
-    this.gameState = 0;
+    let bricks = 0;
+    for ( let brick of this.lm.level ) {
+      if ( brick.breakable ) bricks++;
+    }
     this.cm.ctx.clearRect(0, 0, this.cm.canvas.width, this.cm.canvas.height);
     this.ball = new Ball(SpriteMap.ball.fast, this.cm.canvas.width / 2, this.cm.canvas.height - 190);
     this.paddle = new Paddle(SpriteMap.paddle.normal,(this.cm.canvas.width / 2) - 35,(this.cm.canvas.height - 160));
     this.cm.ctx.drawImage(SpriteMap.sheet, 0, 240, 350, 150, (this.cm.canvas.width / 2) - 175,(this.cm.canvas.height / 2) - 75, 350, 150);
-    this.gameState++;
+    document.querySelector("#lives").innerText = this.ball.lives;
+    document.querySelector("#bricks").innerText = bricks;
+    this.loop();
+  }
+  /**
+   * isGameOver()
+   * @param {Number} lives - number of lives before ball was lost
+   *
+   * Checks if the game is over, if its not it removes a ball
+   */
+  isGameOver(lives){
+    if ( this.frame !== undefined ) window.cancelAnimationFrame(this.frame);
+    lives--;
+    if ( lives === 0 ) {
+      this.gameState++;
+      return this.init();
+    }
+    this.ball.clear(this.cm.ctx);
+    this.paddle.clear(this.cm.ctx);
+    this.ball = new Ball(SpriteMap.ball.fast, this.cm.canvas.width / 2, this.cm.canvas.height - 190);
+    this.paddle = new Paddle(SpriteMap.paddle.normal,(this.cm.canvas.width / 2) - 35,(this.cm.canvas.height - 160));
+    this.ball.lives = lives;
+    document.querySelector("#lives").innerText = this.ball.lives;
     this.loop();
   }
   /**
@@ -467,41 +530,43 @@ class Game{
    */
   update(modifier){
     modifier /= 500;
-    if ( this.lm.level.length === 0 ) {
+    let bricks = 0;
+    for ( let brick of this.lm.level ) {
+      if ( brick.breakable ) bricks++;
+    }
+    document.querySelector("#bricks").innerText = bricks;
+    if ( bricks === 0 ) {
       // if player won
+      this.lm.next();
       if ( this.lm.level === false ) {
         // no levels left start game over
-        this.init();
+        return this.init();
       } else {
         // next level!!
-        this.lm.next();
-        this.start();
+        return this.start();
       }
     } 
     if ( this.ball.pos.y > this.paddle.bottom + (this.paddle.size.h * 2) ) {
       // player lost, start game over
-      this.init();
+      return this.isGameOver(this.ball.lives);
     }
     this.setBounds(this.paddle);
     // manage game state
-    switch ( this.gameState ) {
-      case 1:
-        this.ball.pos.x = this.paddle.pos.x + this.paddle.size.w / 2.5;
-        this.ball.pos.y = this.paddle.pos.y - this.ball.size.h;
+    switch ( this.ball.launched ) {
+      case false:
+        this.ball.bindsTo(this.paddle);
         // launch ball
-        if ( this.gameState === 1 ) {
-          if ( 40 in keysDown ) {
-            this.cm.ctx.clearRect(
-              (this.cm.canvas.width / 2) - 175,
-              (this.cm.canvas.height / 2) - 75,
-              350, 150
-            );          
-            this.gameState++;
-          }        
+        if ( 40 in keysDown ) {
+          this.cm.ctx.clearRect(
+            (this.cm.canvas.width / 2) - 175,
+            (this.cm.canvas.height / 2) - 75,
+            350, 150
+          );
+          this.ball.launched = true;
         }
         this.paddle.move(modifier);
         break;
-      case 2:
+      case true:
         this.ball.update(modifier);
         this.tmpWallCollision(this.ball, modifier);
         if ( this.ball.checkCollision(this.paddle) ) {
@@ -511,8 +576,12 @@ class Game{
         for ( let i = 0; i < this.lm.level.length; i++ ) {
           if ( this.ball.checkCollision(this.lm.level[i]) instanceof Brick) {
             if(this.lm.level[i].breakable){
-              this.lm.level[i].clear(this.cm.ctx);
-              this.lm.level.splice(i, 1);
+              if(this.lm.level[i].hp > 0){
+                this.lm.level[i].hit();
+              }else{
+                this.lm.level[i].clear(this.cm.ctx);
+                this.lm.level.splice(i, 1);
+              }
             }
           }
         }
@@ -520,7 +589,6 @@ class Game{
         break;
     }
   }
-  
   /**
    * render()
    *
@@ -544,7 +612,6 @@ class Game{
     if ( gameObject.pos.x <= 0 )
       gameObject.pos.x = 1;
   }
-
   /**
    * tmpWallCollision()
    *
