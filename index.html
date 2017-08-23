@@ -1,12 +1,101 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <title>Breakout</title>
-  <link rel="stylesheet" type="text/css" href="breakout.css">
+  <link rel="stylesheet" href="main.css" type="text/css" />
+  <script type="text/javascript">
+    const assetLoader = function(){
+      /**
+       * assetLoader
+       * by Steven Lambert
+       * https://github.com/straker/endless-runner-html5-game/tree/master/part3
+       */
+      this.imgs        = {
+        "ts"            : "http://i.imgur.com/i2Fiug3.png"
+      };
+      let assetsLoaded = 0;
+      let numImgs      = Object.keys(this.imgs).length;
+      this.totalAssest = numImgs;
+      function assetLoaded(dic, name){
+        if ( this[dic][name].status !== "loading" ) {
+          return;
+        }
+        this[dic][name].status = "loaded";
+        assetsLoaded++;
+        if ( assetsLoaded === this.totalAssest && typeof this.finished === "function" ) {
+          this.finished();
+        }
+      }
+      this.downloadAll = function(){
+        let self = this;
+        let src;
+        for ( let img in this.imgs ) {
+          if ( this.imgs.hasOwnProperty(img) ) {
+            src = this.imgs[img];
+            (function(self, img) {
+              self.imgs[img] = new Image();
+              self.imgs[img].status = "loading";
+              self.imgs[img].name = img;
+              self.imgs[img].onload = function(){
+                assetLoaded.call(self, "imgs", img);
+              };
+              self.imgs[img].src = src;
+            })(self, img);
+          }
+        }
+      };
+      return {
+        imgs: this.imgs,
+        totalAssest: this.totalAssest,
+        downloadAll: this.downloadAll
+      };
+    }();
+    const resizeGame = function(cm){
+      /**
+       * Auto-Resizing HTML5 canvas
+       * by Derek Detweiler
+       * https://www.html5rocks.com/en/tutorials/casestudies/gopherwoord-studios-resizing-html5-games
+       */
+       let viewport, newGameWidth, newGameHeight, newGameX, newGameY;
+       // Get the dimensions of the viewport
+       viewport = {
+         width: window.innerWidth,
+         height: window.innerHeight
+       };
+       // Determine game size
+       if ( this.canvas.height / this.canvas.width > viewport.height / viewport.width ) {
+         if ( this.safeHeight / this.canvas.width > viewport.height / viewport.width ) {
+           // A
+           newGameHeight = viewport.height * this.canvas.height / this.safeHeight;
+           newGameWidth = newGameHeight * this.canvas.width / this.canvas.height;
+         } else {
+           // B
+           newGameWidth = viewport.width;
+           newGameHeight = newGameWidth * this.canvas.height / this.canvas.width;
+         }
+       } else {
+         if ( this.canvas.height / this.safeWidth > viewport.height / viewport.width ) {
+           // C
+           newGameHeight = viewport.height;
+           newGameWidth = newGameHeight * this.canvas.width / this.canvas.height;
+         } else {
+           // D
+           newGameWidth = viewport.width * this.canvas.width / this.safeWidth;
+           newGameHeight = newGameWidth * this.canvas.height / this.canvas.width;
+         }
+       }
+       this.canvas.style.width = newGameWidth + "px";
+       this.canvas.style.height = newGameHeight + "px";
+       newGameX = (viewport.width - newGameWidth) / 2;
+       newGameY = (viewport.height - newGameHeight) / 2;
+       // Set the new padding of the game so it will be centered
+       this.canvas.style.margin = newGameY + "px " + newGameX + "px";
+    };
+  </script>
 </head>
 <body>
+  <button id="newgame">New Game</button>
   <canvas id="canvas" width="1250" height="720"></canvas>
-  <div id="panel"></div>
-  <script src="breakout.js"></script>
+  <script type="text/javascript" src="main.js"></script>
 </body>
 </html>
