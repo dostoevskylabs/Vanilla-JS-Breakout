@@ -1,127 +1,538 @@
 /**
- * GameDev Practice
- *
- * @author: Andrew Miller 
- * @author: Elijah Seymour
- * assetLoader from: https://github.com/straker/endless-runner-html5-game/tree/master/part3
- * resizeGame from: someone else (forgot who at the moment)
- **/
-// Select our canvas element and set the context to 2dimensional
-const canvas = document.querySelector("#canvas");
-const ctx = canvas.getContext("2d");
-let width = 1250;
-let height = 720;
-let safeWidth = 1250;
-let safeHeight = 720;
-// this object will store all the directional keys pressed and set
-// their value to true so that we know where the player is moving
-let keysDown = {};
-// control game state
-let gameState = 0;
-// store game objects
-let gameObjects = [];
-let timestep = 1000 / 60;
-let maxfps = 60;
-// this is used later to control the speed the character's sprite moves at
-let then = Date.now();
-window.addEventListener("resize", function(){
-  var viewport, newGameWidth, newGameHeight, newGameX, newGameY;
-  // Get the dimensions of the viewport
-  viewport = {
-    width: window.innerWidth,
-    height: window.innerHeight
-  };
-  // Determine game size
-  if ( height / width > viewport.height / viewport.width ) {
-    if ( safeHeight / width > viewport.height / viewport.width ) {
-      // A
-      newGameHeight = viewport.height * height / safeHeight;
-      newGameWidth = newGameHeight * width / height;
+ * Vanilla JS Breakout
+ * 
+ * @author Andrew Miller
+ * @author Elijah Seymour
+ */
+class CanvasManager{
+  /*
+   * @class CanvasManager
+   * @param {Object} canvas - our canvas element
+   *
+   * Manages the Canvas and handles resizing
+   * Creates a reference to our canvas and context
+   */  
+   constructor(canvas){
+     this.canvas = canvas;
+     this.ctx = this.canvas.getContext('2d');
+     this.safeWidth = canvas.width;
+     this.safeHeight = canvas.height;
+     window.addEventListener('resize', resizeGame.bind(this)); /* global resizeGame */
+     resizeGame.apply(this);
+   }
+}
+class GameObject{
+  /**
+   * @class GameObject
+   * @param {Number} x - position x
+   * @param {Number} y - position y
+   * @param {Number} w - width
+   * @param {Number} h - height
+   * @param {Object} sprite - sprite object
+   * 
+   * Creates a new GameObject and gives generic access to inherited helper functions
+   */  
+  constructor(x, y, w, h, sprite = {}){
+    this.size = { w: w, h: h };
+    this.pos = { x: x, y: y };
+    this.prev = {x: x, y: y, w: w, h: h };
+    this.sprite = sprite;
+  }
+  get top(){
+    return this.pos.y;
+  }
+  get right(){
+    return this.pos.x + this.size.w;
+  }
+  get bottom(){
+    return this.pos.y + this.size.h;
+  }
+  get left(){
+    return this.pos.x;
+  }
+  /**
+   * draw()
+   * @param {Object} ctx - canvas context
+   *
+   * Render a GameObject on the canvas
+   */
+  draw(ctx){
+    if ( this.pos.x != this.prev.x ||
+          this.pos.y != this.prev.y ||
+          this.size.w != this.prev.w ||
+          this.size.h != this.prev.h ) {
+      this.clear(ctx);
+    }
+    ctx.drawImage(
+      SpriteMap.sheet,
+      this.sprite.x,
+      this.sprite.y,
+      this.sprite.w,
+      this.sprite.h,
+      this.pos.x,
+      this.pos.y,
+      this.size.w,
+      this.size.h
+    );
+  }
+  /**
+   * clear()
+   * @param {Object} ctx - canvas context
+   *
+   * remove a GameObject from the canvas
+   */
+  clear(ctx){
+    ctx.fillStyle = "pink";
+    ctx.fillRect(this.prev.x, this.prev.y, this.prev.w, this.prev.h);
+    ctx.clearRect(this.prev.x, this.prev.y, this.prev.w, this.prev.h);
+    this.prev.x = this.pos.x;
+    this.prev.y = this.pos.y;
+    this.prev.w = this.size.w;
+    this.prev.h = this.size.h;
+  }
+  /**
+   * checkCollision
+   * @param {Object} gameObject - any game object
+   * 
+   * check if GameObject collides with another GameObject
+   * also inception
+   * also i put inception in your inception so you could inception
+   * ...while you inception
+   */
+  checkCollision(gameObject){
+    if ( this.top < gameObject.bottom &&
+          this.right > gameObject.left &&
+          this.bottom > gameObject.top &&
+          this.left < gameObject.right ) {
+      return true;
+    }
+    return false;
+  }
+}
+class Brick extends GameObject{
+  /**
+   * @class   Brick
+   * @extends GameObject
+   * @param {Object} sprite - sprite object
+   * @param {Number} x - position x
+   * @param {Number} y - position y
+   * @param {Number} type - type of brick
+   * @param {Number} power - power up
+   * @param {Bool} breakable - is brick breakable? true/fase
+   * @param {Number} bp - hitpoints
+   * 
+   * Create a new Brick that extends the GameObject class
+   */
+  constructor(sprite, x, y, type, power, breakable, hp){
+    super(x, y, sprite.w, sprite.h, sprite);
+    this.breakable = breakable;
+    this.power = power;
+    this.type = type;
+    this._hp = hp;
+  }
+  /**
+   * hit()
+   * 
+   * Do hit stuff
+   */
+   hit(){
+     if(this.type == 'normal' || this.type == 'star'){
+       // These types only ever have 0HP, break block
+     }else{
+       let typeMap = ['normal', 'shield1', 'shield2', 'shield3'];
+       this.hp -= 1;
+       this.type = typeMap[this.hp];
+     }
+   }
+
+  /**
+   * draw()
+   * @param {Object} ctx - canvas context
+   * 
+   * Draw Brick to canvas
+   */
+  draw(ctx){
+    // Draw Background Color
+    ctx.fillStyle = this.sprite.color;
+    ctx.fillRect(this.pos.x + 1, this.pos.y + 1, this.size.w - 2, this.size.h -2);
+    // Call Super.Draw() to draw overlay
+    super.draw(ctx);
+  }
+
+}
+class Ball extends GameObject{
+  /**
+   * @class   Ball
+   * @extends GameObject
+   * @param {Object} sprite - sprite object
+   * @param {Number} x - position x
+   * @param {Number} y - position y
+   * 
+   * Create a new Ball that extends the GameObject class
+   */  
+  constructor(sprite, x, y ){
+    super(x, y, 20, 20, sprite);
+    this.velocity = {x: 50, y: -50};
+  }
+  /**
+   * update()
+   * @param {Number} modifier - a speed modifier
+   *
+   * Update the position of the ball
+   */
+  update(modifier){
+    this.pos.x += Math.round(this.velocity.x * modifier);
+    this.pos.y += Math.round(this.velocity.y * modifier);
+  }
+  /**
+   * checkCollision()
+   * @param {Object} gameObject - any GameObject
+   *
+   * Check if the Ball collides with another GameObject
+   */
+  checkCollision(gameObject){
+    if ( super.checkCollision(gameObject) ) {
+      if(gameObject instanceof Brick){
+        if ( this.pos.y < gameObject.pos.y - (gameObject.size.h / 2) ||
+              this.pos.y > gameObject.pos.y + (gameObject.size.h / 2) ) {
+          this.velocity.y =  -1 * this.velocity.y;
+        } else {
+          this.velocity.x = -1 * this.velocity.x;
+        }
+      }
+      return gameObject;
+    }
+  }
+}
+class Paddle extends GameObject{
+  /**
+   * @class   Paddle
+   * @extends GameObject
+   * @param {Object} sprite - sprite object
+   * @param {Number} x - position x
+   * @param {Number} y - position y
+   *
+   * Create a new Paddle that extends the GameObject class
+   */  
+  constructor(sprite, x, y){
+    super(x, y, sprite.w, sprite.h, sprite);
+    this.velocity = {x: 100, y: 0};
+  }
+  /**
+   * move()
+   * @param {Number} modifier - speed modifier
+   * 
+   * Moves the paddles position on the canvas
+   */
+  move(modifier){
+    if ( 37 in keysDown ) // player going left
+      this.pos.x -= Math.round(this.velocity.x * modifier);
+    if ( 39 in keysDown ) // player going right
+      this.pos.x += Math.round(this.velocity.x * modifier);
+  }  
+}
+class LevelManager{
+  /**
+   * @class LevelManager
+   *
+   * Manages state for which level we are currently on
+   */  
+  constructor(){
+    this.levels = [];  
+  }
+  /**
+   * level()
+   *
+   * Get the current level
+   */
+  get level(){
+    if ( this.levels.length === 0 ) {
+      return false;
     } else {
-      // B
-      newGameWidth = viewport.width;
-      newGameHeight = newGameWidth * height / width;
-    }
-  } else {
-    if ( height / safeWidth > viewport.height / viewport.width ) {
-      // C
-      newGameHeight = viewport.height;
-      newGameWidth = newGameHeight * width / height;
-    } else {
-      // D
-      newGameWidth = viewport.width * width / safeWidth;
-      newGameHeight = newGameWidth * height / width;
+      return this.levels[0];  
     }
   }
-  canvas.style.width = newGameWidth + "px";
-  canvas.style.height = newGameHeight + "px";
-  newGameX = (viewport.width - newGameWidth) / 2;
-  newGameY = (viewport.height - newGameHeight) / 2;
-  // Set the new padding of the game so it will be centered
-  canvas.style.margin = newGameY + "px " + newGameX + "px";    
-});
-// wait for keypresses to populate our keysDown object
-window.addEventListener("keydown", function(e){
-  if ( e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 40 ) {
-    keysDown[e.keyCode] = true;
+  /**
+   * reset()
+   *
+   * Reset the LevelManager
+   */
+  reset(){
+    this.levels = [];
   }
-});
-window.addEventListener("keyup", function(e){
-  if ( keysDown[e.keyCode] === true ) {
-    delete keysDown[e.keyCode];
+  /**
+   * parseBrick()
+   * @param {Object} brickObj - bricks are objects too
+   * 
+   * Bricks are for parsing
+   */
+  parseBrick(brickObj){
+    //[{"c":"#d93333","t":0,"b":1,"p":0,"s":1,"x":50,"y":100},
+    //sprite, x, y, health = 1, breakable = true, powerup = 0
+    
+    let typeMap = ["normal", "shield1", "shield2", "shield3", "star"];
+    let powerMap = ["none", "slow", "fast", "expand", "contract", "star"];
+    
+    let size = brickObj.s == 0 ? 'half' : 'full';
+    let hp = brickObj.t > 3 ? 0 : brickObj.t;
+    let type = typeMap[brickObj.t];
+    let power = powerMap[brickObj.p];
+    let breakable = brickObj.b == 1 ? true : false;
+    let sprite = SpriteMap.bricks[size][type];
+    sprite.color = brickObj.color;
+    
+    return new tBrick(sprite, brickObj.x, brickObj.y, type, power, breakable, hp);
+    
   }
-});
-// this thing was taken from this dude i mentioned at the top
-// it will take all assets and give them an identifier and
-// the game won't load until they are all loaded
-// eventually we need to make it modular so that it
-// can only load the ones for the first 4 maps or whatever
-// and then it wont load the new ones until it needs them
-// because it would suck to have to load every existing asset all at once
-const assetLoader = function(){
-  this.imgs        = {
-    "ts"            : "http://i.imgur.com/iLJVnkS.png",
-    "bg"            : "https://s-media-cache-ak0.pinimg.com/originals/c8/11/84/c8118443a391456955a7b33b7ee19191.png",
-    "ts2"           : "http://i.imgur.com/i2Fiug3.png"
-  };
-  let assetsLoaded = 0;
-  let numImgs      = Object.keys(this.imgs).length;
-  this.totalAssest = numImgs;
-  function assetLoaded(dic, name){
-    if ( this[dic][name].status !== "loading" ) {
-      return;
+  /**
+   * add()
+   * @param {Array} level - add a multidimensional array to our levels array.
+   *
+   * Add a new level to the LevelManager
+   */
+  add(level){
+    let tLevel = [];
+    for(let brick of level){
+      tLevel.push(this.parseBrick(brick));
     }
-    this[dic][name].status = "loaded";
-    assetsLoaded++;
-    if ( assetsLoaded === this.totalAssest && typeof this.finished === "function" ) {
-      this.finished();
+    this.levels.push(tLevel);
+  }
+  /**
+   * next()
+   *
+   * Remove the current level so that the next one can be called
+   */
+  next(){
+    this.levels.shift();
+  }
+}
+class Game{
+  /**
+   * @class Game
+   * @param {Object} canvasManager - Our CanvasManager Class
+   * @param {Object} levelManager - Our LevelManager Class
+   * 
+   * Creates an instance of our game
+   */  
+  constructor(canvasManager, levelManager){
+    this.lm = levelManager;
+    this.cm = canvasManager;
+    this.timestep = 1000 / 60;
+    this.maxfps = 60;
+    this.then = performance.now() || Date.now(); /* global performance */
+    this.window = { w: 1250, h: 720 };
+    this.playArea = { x: 0, y: 0, w: 0, h: 0 };
+    this.ball = undefined;
+    this.paddle = undefined;
+    this.bricks = [];
+    this.gameState = 0;
+  }
+  /**
+   * reset()
+   *
+   * Reset our game to a default state so that we can start a new game
+   */
+  reset(){
+    // reset our LevelManager
+    this.lm.reset();
+    // add some levels
+    this.lm.add([[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]]);
+    this.lm.add([[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2]]);
+    this.lm.add([[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3]]);
+    this.lm.add([[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4]]);    
+    this.lm.add([[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5]]);  
+    // clear our ball and paddle cause we are gonna redraw
+    this.ball.clear(this.cm.ctx);
+    this.paddle.clear(this.cm.ctx);
+    // set to undefined
+    this.ball = undefined;
+    this.paddle = undefined;
+    // reset our bricks array
+    this.bricks = [];
+    // reset gameState as we will be stepping through start
+    this.gameState = 0;
+    this.start();
+  }
+  /**
+   * nextLevel()
+   *
+   * Cleanly iterate through levels using LevelManager class
+   */
+  nextLevel(){
+    // clear the ball and paddle from the screen since we are going to redraw it
+    this.ball.clear(this.cm.ctx);
+    this.paddle.clear(this.cm.ctx);
+    // set undefined, why? whynot
+    this.ball = undefined;
+    this.paddle = undefined;
+    // reset our gameState as we are stepping back through start()
+    this.gameState = 0;
+    // tell the LevelManager to remove the current level and get ready for the next
+    this.lm.next();
+    // start-o!
+    this.start();
+  }
+  /**
+   * start()
+   *
+   * Start the level
+   */
+  start(){
+    this.ball = new Ball(SpriteMap.ball.fast, this.cm.canvas.width / 2, this.cm.canvas.height - 190);
+    this.paddle = new Paddle(SpriteMap.paddle.normal,(this.cm.canvas.width / 2) - 35,(this.cm.canvas.height - 160));
+    this.cm.ctx.drawImage(SpriteMap.sheet, 0, 240, 350, 150, (this.cm.canvas.width / 2) - 175,(this.cm.canvas.height / 2) - 75, 350, 150);
+    // this.lm.level will always point to index 0 of
+    // our levels array from our LevelManager
+    // unless there is no level left then it will return false
+    this.buildLevel(this.lm.level);
+    this.gameState++;
+    this.loop();
+  }
+  /**
+   * loop()
+   * 
+   * Main game loop
+   */
+  loop(){
+    let now = performance.now() || Date.now();
+    if ( now < this.then + (1000 / this.maxfps) )
+      return window.requestAnimationFrame(this.loop.bind(this));
+    let delta = now - this.then;
+    this.then = now;
+    delta += this.timestep;
+    while ( delta >= this.timestep ) {
+      this.update(delta);
+      delta -= this.timestep;
     }
-  };
-  this.downloadAll = function(){
-    let self = this;
-    let src;
-    for ( let img in this.imgs ) {
-      if ( this.imgs.hasOwnProperty(img) ) {
-        src = this.imgs[img];
-        (function(self, img) {
-          self.imgs[img] = new Image();
-          self.imgs[img].status = "loading";
-          self.imgs[img].name = img;
-          self.imgs[img].onload = function(){
-            assetLoaded.call(self, "imgs", img)
-          };
-          self.imgs[img].src = src;
-        })(self, img);
+    this.render();
+    return window.requestAnimationFrame(this.loop.bind(this));
+  }
+  /**
+   * update()
+   * @param {Number} modifier - a speed modifier
+   * 
+   * Handles all the changing pieces of the game
+   */
+  update(modifier){
+    modifier /= 500;
+    if ( this.bricks.length === 0 ) {
+      // if player won
+      if ( this.lm.level === false ) {
+        // no levels left start game over
+        this.reset();
+      } else {
+        // next level!!
+        this.nextLevel();
+      }
+    } 
+    if ( this.ball.pos.y > this.paddle.bottom + (this.paddle.size.h * 2) ) {
+      // player lost, start game over
+      this.reset();
+    }
+    this.setBounds(this.paddle);
+    // manage game state
+    switch ( this.gameState ) {
+      case 1:
+        this.ball.pos.x = this.paddle.pos.x + this.paddle.size.w / 2.5;
+        this.ball.pos.y = this.paddle.pos.y - this.ball.size.h;
+        // launch ball
+        if ( this.gameState === 1 ) {
+          if ( 40 in keysDown ) {
+            this.cm.ctx.clearRect(
+              (this.cm.canvas.width / 2) - 175,
+              (this.cm.canvas.height / 2) - 75,
+              350, 150
+            );          
+            this.gameState++;
+          }        
+        }
+        this.paddle.move(modifier);
+        break;
+      case 2:
+        this.ball.update(modifier);
+        this.tmpWallCollision(this.ball, modifier);
+        if ( this.ball.checkCollision(this.paddle) ) {
+          this.ball.pos.y = this.paddle.pos.y - this.ball.size.h;
+          this.ball.velocity.y = -1 *this.ball.velocity.y;
+        }
+        for ( let i = 0; i < this.bricks.length; i++ ) {
+          if ( this.ball.checkCollision(this.bricks[i]) instanceof Brick ) {
+            this.bricks[i].clear(this.cm.ctx);
+            this.bricks.splice(i, 1);
+          }
+        }
+        this.paddle.move(modifier);
+        break;
+    }
+  }
+  /**
+   * render()
+   *
+   * Render to canvas
+   */
+  render(){
+    this.ball.draw(this.cm.ctx);
+    this.paddle.draw(this.cm.ctx);
+    for ( let brick of this.bricks )
+      brick.draw(this.cm.ctx);
+  }
+  /**
+   * setBounds()   
+   * @param {Object} gameObject - Any GameObject
+   *
+   * Set bounds for a gameObject the object cannot cross
+   */
+  setBounds(gameObject){
+    if ( gameObject.pos.x >= this.cm.canvas.width - gameObject.size.w )
+      gameObject.pos.x = this.cm.canvas.width - gameObject.size.w;
+    if ( gameObject.pos.x <= 0 )
+      gameObject.pos.x = 1;
+  }
+  /**
+   * buildLevel()
+   * @param {Array} level - A multi-dimension array of level data
+   *
+   * Builds a level from an array
+   */
+  buildLevel(level){
+    for ( let i = 0; i < level.length; i++ ) {
+      for( let j = 0; j < level[i].length; j++ ) {
+        let tlevel = level[i][j];
+        if ( tlevel !== 0 ) {
+          let brickColor = SpriteMap.bricks._map[tlevel - 1];
+          let sprite = SpriteMap.bricks[brickColor];
+          this.bricks.push(new Brick(
+              sprite,
+              (sprite.w * (j + 1)) - sprite.w,
+              (sprite.h * (i + 1)) - sprite.h
+          ));
+        }
       }
     }
-  };
-  return {
-    imgs: this.imgs,
-    totalAssest: this.totalAssest,
-    downloadAll: this.downloadAll
-  };
-}();
-assetLoader.finished = startGame;
+  }
+  /**
+   * tmpWallCollision()
+   *
+   * Handle collisions to the 4 walls
+   */
+  tmpWallCollision(gameObject, modifier){
+    if ( gameObject.left < 0 ) {
+      gameObject.pos.x = 0;
+      gameObject.velocity.x = -1 * gameObject.velocity.x;
+    } else if ( gameObject.right > this.cm.canvas.width){
+      gameObject.pos.x = this.cm.canvas.width - gameObject.size.h;
+      gameObject.velocity.x = -1 * gameObject.velocity.x;
+    }
+    if ( gameObject.top < 0 ) {
+      gameObject.pos.y = 0;
+      gameObject.velocity.y = -1 * gameObject.velocity.y;
+    } else if ( gameObject.bottom > this.cm.canvas.height ) {
+      gameObject.pos.y = this.cm.canvas.height - gameObject.size.h;
+    }
+  }  
+}
+/***************************************************************************************************************************/
+/*
 const SpriteMap = {
   sheet: undefined,
   bricks: {
@@ -146,256 +557,74 @@ const SpriteMap = {
     white: {x: 350, y: 30, w: 50, h: 30},
   },
   paddle: {
-    normal: {x: 1, y: 191, w: 100, h: 16}
+    small: {x: 1, y: 175, w: 50, h: 60},
+    normal: {x: 1, y: 191, w: 100, h: 16},
+    large: {x: 1, y: 207, w: 200, h: 16}
   },
   ball: {
-    normal: {x: 0, y: 120, w: 24, h: 24}
+    normal: {x: 0, y: 120, w: 24, h: 24},
+    slow: {x: 24, y: 120, w: 24, h: 24},
+    fast: {x: 48, y: 120, w: 24, h: 24}
   }
 };
-class GameObject{
-  constructor ( x, y, w, h, sprite = {} ) {
-    this.size = { w: w, h: h };
-    this.pos = { x: x, y: y};
-    this.prev = {x: x, y: y, w: w, h: h};
-    this.sprite = sprite;
-  }
-  get top(){
-    return this.pos.y;
-  }
-  get right(){
-    return this.pos.x + this.size.w;
-  }
-  get bottom(){
-    return this.pos.y + this.size.h;
-  }
-  get left(){
-    return this.pos.x;
-  }
-  draw(){
-    if ( this.pos.x != this.prev.x ||
-          this.pos.y != this.prev.y ||
-          this.size.w != this.prev.w ||
-          this.size.h != this.prev.h ) {
-      this.clear(ctx);
+*/
+const SpriteMap = {
+  sheet: undefined,
+  logo: {x: 50, y: 0, w:320, h: 130},
+  bricks: {
+    full: {
+      normal: {x: 222, y: 0, w: 50, h: 25},
+      shield1: {x: 72, y: 0, w: 50, h: 25},
+      shield2: {x: 122, y: 0, w: 50, h: 25},
+      shield3: {x: 172, y: 0, w: 50, h: 25},
+      star: {x: 0, y: 25, w: 50, h: 25}
+    },
+    half: {
+      normal: {x: 100, y: 25, w: 50, h: 25},
+      shield1: {x: 272, y: 0, w: 50, h: 25},
+      shield2: {x: 50, y: 25, w: 50, h: 25},
+      shield3: {x: 75, y: 25, w: 50, h: 25},
+      star: {x: 125, y: 25, w: 50, h: 25}
     }
-    ctx.drawImage(
-      SpriteMap.sheet,
-      this.sprite.x,
-      this.sprite.y,
-      this.sprite.w,
-      this.sprite.h,
-      this.pos.x,
-      this.pos.y,
-      this.size.w,
-      this.size.h
-    );
-  }
-  clear(ctx){
-    ctx.clearRect(this.prev.x, this.prev.y, this.prev.w, this.prev.h);
-    this.prev.x = this.pos.x;
-    this.prev.y = this.pos.y;
-    this.prev.w = this.size.w;
-    this.prev.h = this.size.h;
-  }
-}
-class Brick extends GameObject{
-  constructor ( sprite, x, y, health = 1, breakable = true, powerup = 0 ) {
-    super(x, y, SpriteMap.bricks._size.w, SpriteMap.bricks._size.h, sprite);
-    this.health = health;
-    this.breakable = breakable;
-    this.powerup = powerup;
-  }
-}
-class Ball extends GameObject{
-  constructor ( sprite, x, y ) {
-    super(x, y, 20, 20, sprite);
-    this.velocity = {x: 50, y: -50};
-  }
-}
-class Paddle extends GameObject{
-  constructor ( sprite, x, y ) {
-    super(x, y, 100, 16, sprite);
-    this.velocity = {x: 100, y: 0};
-  }
-}
-function getFirstInstanceOf(gameObjects, gameObject){
-  for ( let i = 0; i < gameObjects.length; i++ )
-    if ( gameObjects[i] instanceof gameObject )
-      return gameObjects[i];
-}
-function generateObjects(){
-  // if our gameState is not 0 (our initializing state) don't
-  // allow the game to generate the objects again
-  if ( gameState !== 0 ) return;
-  let levelOne = [
-    [4,0,0,0,0,0,3,0,0,0,0,10,10,10,0,0,0,0,3,0,0,0,0,0,4],
-    [0,4,0,0,0,10,0,3,0,0,0,10,10,10,0,0,0,3,0,10,0,0,0,4,0],
-    [0,0,4,0,10,0,0,13,3,0,0,10,10,10,0,0,3,13,0,0,10,0,4,0,0],
-    [0,0,0,10,0,0,0,13,0,6,6,6,6,6,6,6,0,13,0,0,0,10,0,0,0],
-    [0,0,0,0,0,0,0,13,0,6,6,0,0,0,6,6,0,13,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,13,0,6,6,0,1,0,6,6,0,13,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,13,0,6,6,0,0,0,6,6,0,13,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,13,0,6,6,6,6,6,6,6,0,13,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,13,0,0,0,0,0,0,0,0,0,13,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,13,13,13,13,13,13,13,13,13,13,13,0,0,0,0,0,0,0],
-  ];
-  // testing win condition
-  // uncomment this and press down it will move the ball directily to the only block on screen
-  // that way you can test if what happens when all blocks are broken
-  /*let levelOne = [
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]
-  ];*/
-  gameObjects.push(new Paddle(
-    SpriteMap.paddle.normal, 
-    (canvas.width / 2) - 35, 
-    (canvas.height - 160)
-  ));
-  gameObjects.push(new Ball(
-    SpriteMap.ball.normal, 
-    canvas.width / 2, 
-    canvas.height - 190
-  ));
-  buildLevel(levelOne);
-}
-function drawObjects(){
-  for ( let i in gameObjects )
-    gameObjects[i].draw(ctx);
-}
-function buildLevel(level){
-  let x = 0, y = 0;
-  for ( let i = 0; i < level.length; i++ ) {
-    for( let j = 0; j < level[i].length; j++ ) {
-      let tlevel = level[i][j];
-      if ( tlevel !== 0 ) {
-        let brickColor = SpriteMap.bricks._map[tlevel - 1];
-        let sprite = SpriteMap.bricks[brickColor];
-        gameObjects.push(
-          new Brick(
-            sprite, 
-            (sprite.w * (j + 1)) - sprite.w, 
-            (sprite.h * (i + 1)) - sprite.h
-          )
-        );
-      }
-    }
-  }
-}
-function checkCollision(gameObject){
-  for ( let i = 0; i < gameObjects.length; i++ ) {
-    if ( gameObjects[i] instanceof Brick ) {
-      if ( gameObject.top < gameObjects[i].bottom &&
-            gameObject.right > gameObjects[i].left &&
-            gameObject.bottom > gameObjects[i].top &&
-            gameObject.left < gameObjects[i].right ) {
-          if ( gameObject.pos.y < gameObjects[i].pos.y - (gameObjects[i].size.h / 2) ||
-                gameObject.pos.y > gameObjects[i].pos.y + (gameObjects[i].size.h / 2) ) {
-            gameObject.velocity.y =  -1 * gameObject.velocity.y;
-          } else {
-            gameObject.velocity.x = -1 * gameObject.velocity.x;
-          }      
-        gameObjects[i].clear(ctx);
-        gameObjects.splice(i, 1);
-      }
-    } else if ( gameObjects[i] instanceof Paddle ) {
-      if ( gameObject.top <= gameObjects[i].bottom &&
-            gameObject.left >= gameObjects[i].left &&
-            gameObject.bottom >= gameObjects[i].top &&
-            gameObject.right <= gameObjects[i].right ) {
-        gameObject.pos.y = gameObjects[i].pos.y - gameObject.size.h;
-        gameObject.velocity.y = -1 * gameObject.velocity.y;
-      }      
-    }
-  }
-}
-// define bounds that the player's sprite cannot cross
-// right, left, bottom, top
-function setBounds(gameObject){
-  if ( gameObject.pos.x >= canvas.width - gameObject.size.w )
-    gameObject.pos.x = canvas.width - gameObject.size.w;
-  if ( gameObject.pos.x <= 0 )
-    gameObject.pos.x = 1;
-}
-// update player's position
-function movePosition(gameObject, modifier){
-  if ( 37 in keysDown ) // player going left
-    gameObject.pos.x -= Math.round(gameObject.velocity.x * modifier);
-  if ( 39 in keysDown ) // player going right
-    gameObject.pos.x += Math.round(gameObject.velocity.x * modifier);
-  if ( 40 in keysDown ) { // launch ball
-    if ( gameObject instanceof Ball ) {
-      gameState++;
-      ctx.clearRect(
-        (canvas.width / 2) - 175,
-        (canvas.height / 2) - 75,
-        350, 150
-      );
-    }
+  },
+  powers:{
+    slow: {x: 198, y: 180, w: 24, h: 24},
+    fast: {x: 222, y: 180, w: 24, h: 24},
+    expand: {x: 174, y: 180, w: 24, h: 24},
+    contract: {x: 150, y: 180, w: 24, h: 24},
+    star: {x: 246, y: 180, w: 24, h: 24}
+  },
+  paddle: {
+    small: {x: 250, y: 25, w: 50, h: 60},
+    normal: {x: 150, y: 25, w: 100, h: 16},
+    large: {x: 0, y: 180, w: 200, h: 16}
+  },
+  ball: {
+    normal: {x: 24, y: 0, w: 24, h: 24},
+    slow: {x: 48, y: 0, w: 24, h: 24},
+    fast: {x: 0, y: 0, w: 24, h: 24}
   }
 };
-function setDirection(gameObject, modifier){
-  gameObject.pos.x += Math.round(gameObject.velocity.x * modifier);
-  gameObject.pos.y += Math.round(gameObject.velocity.y * modifier);
-  if ( gameObject.left < 0 ) {
-    gameObject.pos.x = 0;
-    gameObject.velocity.x = -1 * gameObject.velocity.x;
-  } else if ( gameObject.right > canvas.width){
-    gameObject.pos.x = canvas.width - gameObject.size.h;
-    gameObject.velocity.x = -1 * gameObject.velocity.x;
-  }
-  if ( gameObject.top < 0 ) {
-    gameObject.pos.y = 0;
-    gameObject.velocity.y = -1 * gameObject.velocity.y;
-  } else if ( gameObject.bottom > canvas.height ) {
-    gameObject.pos.y = canvas.height - gameObject.size.h;
-  }
-  checkCollision(gameObject);  
-}
-function startGame(){
-  SpriteMap.sheet = assetLoader.imgs.ts2;
-  ctx.drawImage(SpriteMap.sheet, 0, 240, 350, 150, (canvas.width / 2) - 175,(canvas.height / 2) - 75, 350, 150);
-  generateObjects();
-  gameState++;
-  gameLoop();    
-}
-function gameLoop(){
-  let now = Date.now();
-  if ( now < then + (1000 / maxfps) )
-    return requestAnimationFrame(gameLoop);
-  let delta = now - then;
-  then = now;
-  delta += timestep;
-  while ( delta >= timestep ) {
-    update(delta);
-    delta -= timestep;
-  }
-  drawObjects(); // render
-  requestAnimationFrame(gameLoop);
-}
-function update(modifier){
-  modifier /= 500;
-  let ball = getFirstInstanceOf(gameObjects, Ball);
-  let paddle = getFirstInstanceOf(gameObjects, Paddle);
-  if ( gameObjects.length < 3 || ball.pos.y > ( paddle.bottom + (paddle.size.h * 2)  ) ) {
-    // game lost or game won
-    gameObjects = [];
-    gameState = 0;
-    ball.clear(ctx);
-    paddle.clear(ctx);
-    return startGame();
-  }    
-  setBounds(paddle);
-  // manage game state
-  switch ( gameState ) {
-    case 1:
-      ball.pos.x = paddle.pos.x + paddle.size.w / 2.5;
-      ball.pos.y = paddle.pos.y - ball.size.h;
-      movePosition(ball, modifier);
-      movePosition(paddle, modifier);      
-      break;
-    case 2:
-      setDirection(ball, modifier);
-      movePosition(paddle, modifier);      
-      break;
-  }
-}
+/***************************************************************************************************************************/
+let canvasManager = new CanvasManager(document.querySelector("#canvas"));
+let levelManager = new LevelManager();
+let breakout = new Game(canvasManager, levelManager);
+let keysDown = {};
+assetLoader.finished = function(){ /* global assetLoader */
+  SpriteMap.sheet = assetLoader.imgs.ts;
+  breakout.start();
+};
 assetLoader.downloadAll();
+/***************************************************************************************************************************/
+window.addEventListener("keydown", function(e){
+  if ( e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 40 )
+    keysDown[e.keyCode] = true;
+});
+window.addEventListener("keyup", function(e){
+  if ( keysDown[e.keyCode] === true )
+    delete keysDown[e.keyCode];
+});
+document.getElementById("newgame").addEventListener('click', function(){
+      breakout.reset();
+});
+/***************************************************************************************************************************/
