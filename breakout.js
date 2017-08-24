@@ -91,7 +91,7 @@ class GameObject{
     this.prev.h = this.size.h;
   }
   /**
-   * checkCollision
+   * checkCollision()
    * @param {Object} gameObject - any game object
    * 
    * check if GameObject collides with another GameObject
