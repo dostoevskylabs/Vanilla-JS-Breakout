@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Editor</title>
+  <!--<link rel="stylesheet" href="editor.css" type="text/css" />-->
+  <style type="text/css">
+    @import url('https://fonts.googleapis.com/css?family=Open+Sans');
+    
+    body{
+      background-color: #eee;
+      font-family: 'Open Sans', sans-serif;
+      font-size: 0.8em;
+      font-weight: bold;
+    }
+    fieldset{
+        user-select: none;   
+        border: 1px solid #bbb;
+        border-radius: 5px;
+    }
+    legend{
+        color: #828282;
+        padding:0;
+        border: none;
+    }
+    #left{
+      display:block;
+      position: absolute;
+      top:0;
+      left:0;
+      width: 290px;
+      bottom:0;
+      padding: 5px;
+    }
+    #right{
+      position: absolute;
+      top:0;
+      right:0;
+      bottom:0;
+      left: 300px;
+    }
+    #game{
+      width: 1250px;
+      height: 725px;
+      background-color: #202020;
+    }
+    #color{
+        -webkit-appearance: none;
+        padding:0;
+        margin:0;
+        width:50px;
+        height:25px;
+        border: 1px solid pink;
+        border:none;
+        
+    }
+    #color::-webkit-color-swatch-wrapper{
+        padding:0;
+        border:none;
+    }
+    #border::-webkit-color-swatch {
+    	border: none;
+    }
+    label{
+        display: inline-block;
+        width: 50px;
+    }
+    #settings div{
+        margin-bottom: 8px;
+    }
+    #generate{
+        width: 100%;
+    }
+    textarea{
+        resize:vertical;
+        width:98%;
+        height: 200px;
+        max-height:500px;
+        border:1px solid #bbb;
+        background-color: #f1f1f1;
+        font-family: 'Open Sans', sans-serif;
+        font-size: 8px;
+    }
+    #clearColor{
+        font-weight:bold;
+        background-color:transparent;
+        color:#ff0000;
+        border:0px solid red;
+        border-radius: 100%;
+        width:15px;
+        height:15px;
+    }
+    
+  </style>
+</head>
+<body>
+
+<div id="left">
+    <fieldset id="settings">
+        <legend>SETTINGS</legend>
+        
+        <div id="uiColor">
+            <label for="color">Color </label>
+            <input id="color" type="color" value="#d93333" list="colors"  class="onChange"> 
+            <datalist id=colors>
+            	<option>#d93333</option>
+            	<option>#d9337d</option>
+            	<option>#d933c0</option>
+            	<option>#a033d9</option>
+            	<option>#3b33d9</option>
+            	<option>#3362d9</option>
+            	<option>#339cd9</option>
+            	
+            	<option>#33cfd9</option>
+            	<option>#33d98d</option>
+            	<option>#33d93f</option>
+            	<option>#7dd933</option>
+            	<option>#d3d933</option>
+            	<option>#d98533</option>
+            	<option>#e5e5e5</option>
+            </datalist>
+        </div>
+        
+        <div id="uiSize">
+            <label for="size">Size</label>
+            <select name="size" id="size" class="onChange">
+                <option value="full">Full Width (50px)</option>
+                <option value="half">Half Width (25px)</option>
+            </select>
+        </div>
+        
+        <div id="uiType">
+            <label for="type">Type</label>
+            <select name="type" id="type"  class="onChange">
+                <option value="normal">Normal</option>
+                <option value="shield1">Shield (x1)</option>
+                <option value="shield2">Shield (x2)</option>
+                <option value="shield3">Shield (x3)</option>
+                <option value="star">Star</option>
+            </select>
+        </div>
+        
+        <div id="uiPower">
+            <label for="power">Power</label>
+            <select name="power" id="power" class="onChange">
+                <option value="none">None</option>
+                <option value="slow">Slow</option>
+                <option value="fast">Fast</option>
+                <option value="expand">Expand</option>
+                <option value="contract">Contract</option>
+                <option value="star">Star / Health?</option>
+            </select>
+        </div>
+        
+        <div id="uiBreakable">
+            <input type="checkbox" id="breakable" class="onChange" checked>
+            <label for="breakable">Breakable</label>
+        </div>
+        
+
+        
+        <input type="button" value="Generate" id="generate">
+        
+    </fieldset>
+    <fieldset>
+        <legend>PREVIEW</legend>
+        <canvas id="preview" width="260px" height="50" ></canvas>
+    </fieldset>
+    <fieldset>
+        <legend>OUTPUT</legend>
+        <textarea id="output"></textarea>
+    </fieldset>
+</div>
+
+<div id="right">
+    <canvas id="game" width="1250" height="725"></canvas>
+</div>
+    
+<script type="text/javascript">
+    let canvas = document.getElementById('game');
+    let ctx = canvas.getContext('2d');
+    
+    let previewCanvas = document.getElementById('preview');
+    let previewCtx = previewCanvas.getContext('2d');
+    
+    let image = new Image();
+    image.addEventListener('load', imageLoaded);
+    image.src = "spritesheet.png";
+    
+    
+    
+    const bricks = {
+        full: {
+          normal: {x: 222, y: 0, w: 50, h: 25},
+          shield1: {x: 72, y: 0, w: 50, h: 25},
+          shield2: {x: 122, y: 0, w: 50, h: 25},
+          shield3: {x: 172, y: 0, w: 50, h: 25},
+          star: {x: 0, y: 25, w: 50, h: 25}
+        },
+        half: {
+          normal: {x: 100, y: 25, w: 25, h: 25},
+          shield1: {x: 272, y: 0, w: 25, h: 25},
+          shield2: {x: 50, y: 25, w: 25, h: 25},
+          shield3: {x: 75, y: 25, w: 25, h: 25},
+          star: {x: 125, y: 25, w: 25, h: 25}
+        }
+    }
+
+    
+    //let gridState = [];
+    let gridState = [...Array(30).keys()].map(i => Array(50));
+    let blank = {type: undefined, color: undefined, };
+
+    
+    let elements = {
+        breakable: document.getElementById('breakable'),
+        power: document.getElementById('power'),
+        type: document.getElementById('type'),
+        size: document.getElementById('size'),
+        color: document.getElementById('color'),
+        generate: document.getElementById('generate'),
+        output: document.getElementById('output'),
+        preview: document.getElementById('preview')
+    };
+    
+
+    
+    function getValues(){
+        let color = elements.color.value;
+        let type = elements.type.value;
+        let breakable = elements.breakable.checked;
+        let power = elements.power.value;
+        let size = elements.size.value;
+        
+        console.log(color, type, breakable, power, size);
+        
+        return {
+            color: color,
+            type: type,
+            breakable: breakable,
+            power: power,
+            size: size,
+            x: 0,
+            y: 0,
+             toJSON: function(){
+                let power = {none: 0, slow: 1, fast: 2, expand: 3, contract: 4, star: 5};
+                let type = {normal: 0,shield1: 1,shield2: 2,shield3: 3,star: 4};
+                var data = {
+                    c: this.color,
+                    t: type[this.type],
+                    b: this.breakable == true ? 1 : 0,
+                    p: power[this.power],
+                    s: this.size == "full" ? 1 : 0,
+                    x: this.x,
+                    y: this.y
+                };
+                return data;
+            }
+        };
+    }
+    
+    function drawGrid(){
+        ctx.strokeStyle = "#1C1C1C";
+        ctx.beginPath();
+        ctx.lineWidth = 1;
+        for(let i = 0; i < gridState.length; i++){
+            for(let j = 0; j < gridState[i].length; j++){
+                ctx.moveTo(j * 25, 0);
+                ctx.lineTo(j * 25, 725);
+            }
+            ctx.moveTo(0, i * 25);
+            ctx.lineTo(1250, i * 25);
+        }
+        ctx.closePath();
+        ctx.stroke();
+    }
+    
+    
+    function click(e){
+        let rect = canvas.getBoundingClientRect();
+        let x = Math.floor((e.clientX - rect.left) / 25);
+        let y =  Math.floor((e.clientY - rect.top) / 25);
+        
+        
+        let currentObj = gridState[y][x];
+        let prevObj = gridState[y][x-1];
+        let nextObj = gridState[y][x+1];
+        let skip = false; 
+        let values = getValues();
+        
+        if(prevObj){
+            if(prevObj.size == "full"){
+                skip = true;
+            }
+        }
+        if(currentObj){
+            if(currentObj.size == "full" && values.size == "half"){
+                skip = true;
+            }
+        }
+        console.log(values.size == "full",  nextObj != undefined);
+        if(values.size == "full" && nextObj != undefined){
+            skip = true;
+        }
+        
+        if(!skip){
+            values.x = x * 25;
+            values.y = y * 25;
+            gridState[y][x] = Object.assign({}, values);
+            drawAt(x * 25, y * 25, gridState[y][x]);
+            
+        }
+    }
+    
+    function drawAt(x, y, gridStateItem){
+        let values = getValues();
+        
+        let w = gridStateItem.size == "full" ? 50 : 25
+        ctx.fillStyle = gridStateItem.color;
+        ctx.fillRect(x +1,y +1,w - 2,25 - 2);
+        
+        let sprite = bricks[gridStateItem.size][gridStateItem.type];
+        
+        ctx.drawImage(image, sprite.x, sprite.y, sprite.w, sprite.h, x, y, sprite.w, sprite.h);
+        
+    }
+    function clear(x, y, obj){
+        let w = obj.size == "full" ? 50 : 25;
+        console.log(obj);
+        ctx.clearRect(x + 1, y + 1, w - 2, 25 - 2);
+        if(w == 50){
+            ctx.beginPath();
+            ctx.moveTo(x + 25, y);
+            ctx.lineTo(x + 25, y + 25);
+            ctx.closePath();
+            ctx.stroke();
+        }
+        
+    }
+    function erase(e){
+        e.preventDefault();
+        let rect = canvas.getBoundingClientRect();
+        let x = Math.floor((e.clientX - rect.left) / 25);
+        let y =  Math.floor((e.clientY - rect.top) / 25);
+        let obj = gridState[y][x];
+        let prevObj = gridState[y][x-1];
+        if(obj){
+            clear(x * 25, y * 25, obj);
+            gridState[y][x] = undefined;
+        }else if(prevObj && prevObj.size == "full"){
+            clear((x-1) * 25, y * 25, prevObj);
+            gridState[y][x-1] = undefined;
+        }
+        
+    }
+    
+
+
+    function resize(obj){
+        let power = {
+            none: 0,
+            slow: 1,
+            fast: 2,
+            expand: 3,
+            contract: 4,
+            star: 5
+        }
+        let type = {
+            normal: 0,
+            shield1: 1,
+            shield2: 2,
+            shield3: 3,
+            star: 4
+        }
+        return {
+            c: obj.color,
+            t: type[obj.type],
+            b: obj.breakable == true ? 1 : 0,
+            p: power[obj.power],
+            s: obj.size == "full" ? 1 : 0,
+            x: obj.x,
+            y: obj.y
+        }
+    }
+    function generate(){
+        console.log("Moo")
+        let buildArray = [];
+        for(let i = 0; i < gridState.length; i++){
+            for(let j = 0; j < gridState[i].length; j++){
+                let gridItem = gridState[i][j];
+                if(gridItem){
+                    buildArray.push(gridItem);
+                }
+            }
+        }
+        elements.output.value = JSON.stringify(buildArray);
+    }
+    function updatePreview(){
+        previewCtx.clearRect(0,0,previewCanvas.width, previewCanvas.height);
+        
+        let values = getValues();
+        console.log("updatePreview()", values);
+        
+        let w = values.size == "full" ? 50 : 25;
+        let x = (previewCanvas.width / 2) - (w / 2);
+        let y = (previewCanvas.height / 2) - 13;
+        
+        console.log(w,x,y);
+        
+        previewCtx.fillStyle = values.color;
+        previewCtx.fillRect(x + 1, y + 1,w - 2,25 - 2);
+        
+        let sprite = bricks[values.size][values.type];
+        
+        previewCtx.drawImage(image, sprite.x, sprite.y, sprite.w, sprite.h, x, y, sprite.w, sprite.h);
+        
+        
+    }
+    function imageLoaded(e){
+        updatePreview()
+        drawGrid();
+        canvas.addEventListener("click", click);
+        canvas.addEventListener('contextmenu', erase);
+        
+        elements.generate.addEventListener('click', generate);
+        
+        let onChangeElements = document.querySelectorAll(".onChange");
+        for(let element of onChangeElements){
+            element.addEventListener('change', updatePreview);
+        }
+    }
+    
+</script>    
+</body>
+</html>
