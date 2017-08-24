@@ -100,13 +100,23 @@ class GameObject{
    * ...while you inception
    */
   checkCollision(gameObject){
-    if ( this.top < gameObject.bottom &&
-          this.right > gameObject.left &&
-          this.bottom > gameObject.top &&
-          this.left < gameObject.right ) {
-      return true;
+    let offset = { x : 0, y : 0 };
+    let overlap = false;
+    if ( ( this.pos.x + this.size.w > gameObject.pos.x && gameObject.pos.x + gameObject.size.w > this.pos.x ) &&
+          ( this.pos.y + this.size.h > gameObject.pos.y + gameObject.size.h && gameObject.pos.y + gameObject.size.h > this.pos.y) ) {
+    	overlap = true;
+    	if ( ( this.pos.x + this.size.w / 2 ) < ( gameObject.pos.x + gameObject.size.w / 2 ) ) {
+    		offset.x = ( this.pos.x + this.size.w ) - gameObject.pos.x;
+    	} else {
+    		offset.x = this.pos.x - ( gameObject.pos.x + gameObject.size.w );
+    	}
+    	if( ( this.pos.y + this.size.h / 2 ) < ( gameObject.pos.y + gameObject.size.h / 2 ) ) {
+    		offset.y = ( this.pos.y + this.size.h ) - gameObject.pos.y;
+    	} else {
+    		offset.y = this.pos.y - ( gameObject.pos.y + gameObject.size.h );
+    	}
     }
-    return false;
+    return {overlap, offset};
   }
 }
 class Brick extends GameObject{
@@ -158,7 +168,27 @@ class Brick extends GameObject{
     // Call super.draw() to draw overlay
     super.draw(ctx);
   }
-
+  /**
+   * checkCollision()
+   * @param {Object} gameObject - any game object
+   * @param {Number} modifier - speed modifier
+   * 
+   * Check collision with bricks
+   */
+  checkCollision(gameObject, modifier){
+    if ( gameObject instanceof Ball ) {
+      if ( gameObject.launched ) {
+        let data;
+        data = super.checkCollision(gameObject);
+        if ( data.overlap ) {
+          gameObject.rebound(data.offset);
+          return true;
+        } else {
+          return false;
+        }
+      }
+    }
+  }
 }
 class Ball extends GameObject{
   /**
@@ -187,59 +217,28 @@ class Ball extends GameObject{
     this.pos.y += Math.round(this.velocity.y * modifier);
   }
   /**
-   * checkCollision()
-   * @param {Object} gameObject - any GameObject
+   * rebound()
+   * @param {Object} offset - offset position data
    *
-   * Check if the Ball collides with another GameObject
+   * rebound!
    */
-  checkCollision(gameObject){
-    if ( super.checkCollision(gameObject) ) {
-      if ( gameObject instanceof Brick ) {
-        if ( this.pos.x < gameObject.left ) {
-          // left side
-          this.velocity.x = -1 * this.velocity.x;
-          if ( this.velocity.y > 0 ) {
-            // going down
-            this.velocity.y = Math.abs(this.velocity.y);
-          } else if ( this.pos.y === gameObject.bottom ) {
-            // going up
-            this.velocity.y = -1 * this.velocity.y;
-          }            
-        } else if ( this.pos.x > gameObject.right ) {
-          // right side
-          this.velocity.x = Math.abs(this.velocity.x);
-          if ( this.velocity.y > 0 ) {
-            // going down
-            this.velocity.y = Math.abs(this.velocity.y);
-          } else if ( this.pos.y === gameObject.bottom ) {
-            // going up
-            this.velocity.y = -1 * this.velocity.y;
-          }       
-        } else if ( this.pos.y > gameObject.top + (gameObject.size.h / 2) ) {
-          // bottom
-          this.velocity.y = Math.abs(this.velocity.y);
-          if ( this.pos.x === gameObject.right ) {
-            // going right
-            this.velocity.x = Math.abs(this.velocity.x);
-          } else if ( this.pos.x === gameObject.left ) {
-            // going left
-            this.velocity.x = -1 * this.velocity.x;
-          }          
-        } else if ( this.pos.y < gameObject.bottom - (gameObject.size.h / 2) ) {
-          // top
-          this.velocity.y = -1 * this.velocity.y;
-          if ( this.pos.x === gameObject.right ) {
-            // going right
-            this.velocity.x = Math.abs(this.velocity.x);
-          } else if ( this.pos.x === gameObject.left ) {
-            // going left
-            this.velocity.x = -1 * this.velocity.x;
-          }                                      
-        }
-      }
-      return gameObject;
-    }
-  }
+  rebound(offset){
+  	let minShift = Math.min( Math.abs(offset.x),
+  				                    Math.abs(offset.y) );
+  	if ( Math.abs(offset.x) == minShift ) {
+  		offset.y = 0;
+  	} else {
+  		offset.x = 0;	
+  	}
+  	this.pos.x = this.pos.x + offset.x;
+  	this.pos.y = this.pos.y + offset.y;
+  	if ( offset.x !== 0 ) {
+  		this.velocity.x = -1 * this.velocity.x;
+  	}
+  	if ( offset.y !== 0 ) {
+  		this.velocity.y = -1 * this.velocity.y;
+  	}
+  }   
   /**
    * bindsTo()
    * @param {Object} gameObject - any game object
@@ -249,6 +248,27 @@ class Ball extends GameObject{
   bindsTo(gameObject){
     this.pos.x = gameObject.pos.x + gameObject.size.w / 2.5;
     this.pos.y = gameObject.pos.y - this.size.h;    
+  }
+  /**
+   * checkCollision()
+   * @param {Object} canvas - reference to canvas
+   *
+   * Check collision with walls
+   */
+  checkCollision(canvas){
+    if ( this.left < 0 ) {
+      this.pos.x = 0;
+      this.velocity.x = -1 * this.velocity.x;
+    } else if ( this.right > canvas.width ) {
+      this.pos.x = canvas.width - this.size.h;
+      this.velocity.x = -1 * this.velocity.x;
+    }
+    if ( this.top < 0 ) {
+      this.pos.y = 0;
+      this.velocity.y = -1 * this.velocity.y;
+    } else if ( this.bottom > canvas.height ) {
+      this.pos.y = canvas.height - this.size.h;
+    }
   }
 }
 class Paddle extends GameObject{
@@ -276,7 +296,25 @@ class Paddle extends GameObject{
       this.pos.x -= Math.round(this.velocity.x * modifier);
     if ( 39 in keysDown ) // player going right
       this.pos.x += Math.round(this.velocity.x * modifier);
-  }  
+  }
+  /**
+   * checkCollision()
+   * @param {Object} gameObject - any GameObject
+   * @param {Number} modifier - speed modifier
+   * 
+   * Check if the Ball collides with another GameObject
+   */
+  checkCollision(gameObject, modifier){
+      if ( gameObject instanceof Ball ) {
+        if ( gameObject.launched ) {
+          let data;
+          data = super.checkCollision(gameObject);
+          if ( data.overlap ) {
+            gameObject.rebound(data.offset);
+          }
+        }
+      }      
+  }
 }
 class LevelManager{
   /**
@@ -332,7 +370,7 @@ class LevelManager{
    */
   add(level){
     let tLevel = [];
-    for(let brick of level){
+    for ( let brick of level ) {
       tLevel.push(this.parseBrick(brick));
     }
     this.levels.push(tLevel);
@@ -421,9 +459,7 @@ class Game{
     this.ball = new Ball(SpriteMap.ball.fast, this.cm.canvas.width / 2, this.cm.canvas.height - 190);
     this.paddle = new Paddle(SpriteMap.paddle.normal,(this.cm.canvas.width / 2) - 35,(this.cm.canvas.height - 160));
     this.cm.ctx.drawImage(SpriteMap.sheet, 0, 240, 350, 150, (this.cm.canvas.width / 2) - 175,(this.cm.canvas.height / 2) - 75, 350, 150);
-    //document.querySelector("#lives").innerText = this.ball.lives;
-    //document.querySelector("#bricks").innerText = bricks;
-    this.updateStats()
+    this.updateStats();
     this.loop();
   }
   /**
@@ -444,7 +480,6 @@ class Game{
     this.ball = new Ball(SpriteMap.ball.fast, this.cm.canvas.width / 2, this.cm.canvas.height - 190);
     this.paddle = new Paddle(SpriteMap.paddle.normal,(this.cm.canvas.width / 2) - 35,(this.cm.canvas.height - 160));
     this.ball.lives = lives;
-    //document.querySelector("#lives").innerText = this.ball.lives;
     this.updateStats()
     this.loop();
   }
@@ -460,7 +495,6 @@ class Game{
     //   this.frame = window.requestAnimationFrame(this.loop.bind(this));
     //   return this.frame;
     // }
-  
     let delta = now - this.then;
     this.then = now;
     delta += this.timestep;
@@ -502,51 +536,46 @@ class Game{
       return this.isGameOver(this.ball.lives);
     }
     this.setBounds(this.paddle);
-    // manage game state
-    switch ( this.ball.launched ) {
-      case false:
-        this.ball.bindsTo(this.paddle);
-        // launch ball
-        if ( 40 in keysDown ) {
-          this.cm.ctx.clearRect(
-            (this.cm.canvas.width / 2) - 175,
-            (this.cm.canvas.height / 2) - 75,
-            350, 150
-          );
-          this.ball.launched = true;
-        }
-        this.paddle.move(modifier);
-        break;
-      case true:
-        this.ball.update(modifier);
-        this.tmpWallCollision(this.ball, modifier);
-        if ( this.ball.checkCollision(this.paddle) ) {
-          this.ball.pos.y = this.paddle.pos.y - this.ball.size.h;
-          this.ball.velocity.y = -1 *this.ball.velocity.y;
-        }
-        for ( let i = 0; i < this.lm.level.length; i++ ) {
-          if ( this.ball.checkCollision(this.lm.level[i]) instanceof Brick) {
-            if(this.lm.level[i].breakable){
-              if(this.lm.level[i].hp > 0){
-                this.lm.level[i].hit();
-              }else{
-                this.lm.level[i].clear(this.cm.ctx);
-                this.lm.level.splice(i, 1);
-              }
+    if ( !this.ball.launched ) {
+      this.ball.bindsTo(this.paddle);
+      // launch ball
+      if ( 40 in keysDown ) {
+        this.cm.ctx.clearRect(
+          (this.cm.canvas.width / 2) - 175,
+          (this.cm.canvas.height / 2) - 75,
+          350, 150
+        );
+        this.ball.launched = true;
+      }
+      this.paddle.move(modifier);
+    } else {
+      this.ball.update(modifier);
+      this.ball.checkCollision(this.cm.canvas);
+      this.paddle.checkCollision(this.ball, modifier);
+      for ( let i = 0; i < this.lm.level.length; i++ ) {
+        if ( this.lm.level[i].checkCollision(this.ball, modifier) ) {
+          if ( this.lm.level[i].breakable ) {
+            if ( this.lm.level[i].hp > 0 ) {
+              this.lm.level[i].hit();
+            } else {
+              this.lm.level[i].clear(this.cm.ctx);
+              this.lm.level.splice(i, 1);
             }
           }
         }
-        this.paddle.move(modifier);
-        break;
+      }                
+      this.paddle.move(modifier);
     }
   }
+  /**
+   * updateStats()
+   *
+   * Draw data on screen
+   */
   updateStats(){
-    
     let bricks = this.lm.level.filter(function(brick){
       return brick.breakable;
     });
-
-    
     this.cm.ctx.clearRect(10, this.cm.canvas.height - 40, 200, 40);
     this.cm.ctx.fillStyle = '#fff';
     this.cm.ctx.font = "15px Open Sans";
@@ -576,26 +605,6 @@ class Game{
     if ( gameObject.pos.x <= 0 )
       gameObject.pos.x = 1;
   }
-  /**
-   * tmpWallCollision()
-   *
-   * Handle collisions to the 4 walls
-   */
-  tmpWallCollision(gameObject, modifier){
-    if ( gameObject.left < 0 ) {
-      gameObject.pos.x = 0;
-      gameObject.velocity.x = -1 * gameObject.velocity.x;
-    } else if ( gameObject.right > this.cm.canvas.width){
-      gameObject.pos.x = this.cm.canvas.width - gameObject.size.h;
-      gameObject.velocity.x = -1 * gameObject.velocity.x;
-    }
-    if ( gameObject.top < 0 ) {
-      gameObject.pos.y = 0;
-      gameObject.velocity.y = -1 * gameObject.velocity.y;
-    } else if ( gameObject.bottom > this.cm.canvas.height ) {
-      gameObject.pos.y = this.cm.canvas.height - gameObject.size.h;
-    }
-  }  
 }
 /***************************************************************************************************************************/
 const SpriteMap = {
@@ -653,8 +662,5 @@ window.addEventListener("keydown", function(e){
 window.addEventListener("keyup", function(e){
   if ( keysDown[e.keyCode] === true )
     delete keysDown[e.keyCode];
-});
-document.getElementById("newgame").addEventListener('click', function(){
-      breakout.reset();
 });
 /***************************************************************************************************************************/
