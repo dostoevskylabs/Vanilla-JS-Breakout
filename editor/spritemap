@@ -1,0 +1,86 @@
+const SpriteMap = {
+  sheet: undefined,
+  logo: {x: 50, y: 0, w:320, h: 130}
+  bricks: {
+    25: {
+      normal: {x: 222, y: 0, w: 50, h: 25},
+      hp1: {x: 72, y: 0, w: 50, h: 25},
+      hp2: {x: 122, y: 0, w: 50, h: 25},
+      hp3: {x: 172, y: 0, w: 50, h: 25},
+      star: {x: 0, y: 25, w: 50, h: 25}
+    },
+    50: {
+      normal: {x: 100, y: 25, w: 50, h: 25},
+      hp1: {x: 272, y: 0, w: 50, h: 25},
+      hp2: {x: 50, y: 25, w: 50, h: 25},
+      hp3: {x: 75, y: 25, w: 50, h: 25},
+      star: {x: 125, y: 25, w: 50, h: 25}
+    }
+  },
+  powers:{
+    contract: {x: 150, y: 180, w: 24, h: 24},
+    expand: {x: 174, y: 180, w: 24, h: 24},
+    slow: {x: 198, y: 180, w: 24, h: 24},
+    fast: {x: 222, y: 180, w: 24, h: 24},
+    star: {x: 246, y: 180, w: 24, h: 24}
+  },
+  paddle: {
+    small: {x: 250, y: 25, w: 50, h: 60},
+    normal: {x: 150, y: 25, w: 100, h: 16},
+    large: {x: 0, y: 180, w: 200, h: 16}
+  },
+  ball: {
+    normal: {x: 24, y: 0, w: 24, h: 24},
+    slow: {x: 48, y: 0, w: 24, h: 24},
+    fast: {x: 0, y: 0, w: 24, h: 24}
+  }
+};
+
+
+[
+  [{size: 50, type: 'normal', color: 'rgb(0,0,0)', breakable: trueja}]
+]
+
+  buildLevel(level){
+    for ( let i = 0; i < level.length; i++ ) {
+      for( let j = 0; j < level[i].length; j++ ) {
+        let tlevel = level[i][j];
+        if ( tlevel !== 0 ) {
+          let brickColor = SpriteMap.bricks._map[tlevel - 1];
+          let sprite = SpriteMap.bricks[brickColor];
+          this.bricks.push(new Brick(
+              sprite,
+              (sprite.w * (j + 1)) - sprite.w,
+              (sprite.h * (i + 1)) - sprite.h
+          ));
+        }
+      }
+    }
+  }
+  
+class Brick extends GameObject{
+  constructor(sprite, x, y, health = 1, breakable = true, powerup = 0){
+    this.sprite = sprite;
+    super(x, y, this.sprite.w, this.size.h, sprite);
+    this.health = health;
+    this.breakable = breakable;
+    this.powerup = powerup;
+    this.radius = 100;
+  }
+  draw(x, y){
+    
+  }
+}
+  
+  parseLevel(level){
+      for(let brick of level){
+          let sprite = SpriteMap.bricks[brick.size][brick.type];
+          this.bricks.push(new Brick(sprite, brick.x, brick.y, brick.health, brick.breakable, brick.power));
+      }
+  }
+  
+  
+  
+  playArea = {
+      x: 30, y: 30, w: 1000, h: 690
+  }
