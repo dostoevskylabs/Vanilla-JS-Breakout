@@ -550,7 +550,7 @@ class Game{
       this.paddle.move(modifier);
     } else {
       this.ball.update(modifier);
-      this.ball.checkCollision(this.cm.canvas);
+      this.ball.checkCollision(this.cm.canvas, modifier);
       this.paddle.checkCollision(this.ball, modifier);
       for ( let i = 0; i < this.lm.level.length; i++ ) {
         if ( this.lm.level[i].checkCollision(this.ball, modifier) ) {
