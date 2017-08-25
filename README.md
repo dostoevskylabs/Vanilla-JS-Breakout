@@ -1,7 +1,7 @@
 # Vanilla-JS-Breakout
 Practicing game dev concepts, still being worked on
 
-##Developed by 
+## Developed by 
 Andrew Miller ([@starroad](https://www.google.com))
 
 Elijah Seymour ([@dostoevskylabs](https://www.twitter.com/dostoevskylabs))
