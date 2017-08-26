@@ -9,7 +9,6 @@ class CanvasManager {
    * @class CanvasManager
    * @param {Object} canvas - our canvas element
    *
-   * Manages the Canvas and handles resizing
    * Creates a reference to our canvas and context
    */  
    constructor( canvas ) {
@@ -17,8 +16,6 @@ class CanvasManager {
      this.ctx = this.canvas.getContext('2d');
      this.safeWidth = canvas.width;
      this.safeHeight = canvas.height;
-     //window.addEventListener('resize', resizeGame.bind(this)); /* global resizeGame */
-     //resizeGame.apply(this);
    }
 }
 class GameObject {
@@ -38,30 +35,14 @@ class GameObject {
     this.prev = {x: x, y: y, w: w, h: h };
     this.sprite = sprite;
   }
-  get top(){
-    return this.pos.y;
-  }
-  get right(){
-    return this.pos.x + this.size.w;
-  }
-  get bottom(){
-    return this.pos.y + this.size.h;
-  }
-  get left(){
-    return this.pos.x;
-  }
-  get centerX(){
-    return this.pos.x + (this.size.w / 2)
-  }
-  get centerY(){
-    return this.pos.y + (this.size.h / 2);
-  }
-  get centerW(){
-    return this.size.w / 2;
-  }
-  get cetnerH(){
-    return this.size.h / 2;
-  }
+  get top(){ return this.pos.y; }
+  get right(){ return this.pos.x + this.size.w; }
+  get bottom(){ return this.pos.y + this.size.h; }
+  get left(){ return this.pos.x; }
+  get centerX(){ return this.pos.x + (this.size.w / 2); }
+  get centerY(){ return this.pos.y + (this.size.h / 2); }
+  get centerW(){ return this.size.w / 2; }
+  get cetnerH(){ return this.size.h / 2; }
   /**
    * updateSprite()
    * @param {Object} sprite - sprite object
@@ -125,12 +106,12 @@ class GameObject {
     if ( ( this.pos.x + this.size.w >= gameObject.pos.x && gameObject.pos.x + gameObject.size.w >= this.pos.x ) &&
           ( this.pos.y + this.size.h >= gameObject.pos.y && gameObject.pos.y + gameObject.size.h >= this.pos.y) ) {
     	overlap = true;
-    	if ( ( this.pos.x + this.size.w / 6 ) < ( gameObject.pos.x + gameObject.size.w / 6 ) ) {
+    	if ( ( this.pos.x + this.size.w / 2 ) < ( gameObject.pos.x + gameObject.size.w / 2 ) ) {
     		offset.x = ( this.pos.x + this.size.w ) - gameObject.pos.x;
     	} else {
     		offset.x = this.pos.x - ( gameObject.pos.x + gameObject.size.w );
     	}
-    	if( ( this.pos.y + this.size.h / 6 ) < ( gameObject.pos.y + gameObject.size.h /  6 ) ) {
+    	if( ( this.pos.y + this.size.h / 2 ) < ( gameObject.pos.y + gameObject.size.h /  2 ) ) {
     		offset.y = ( this.pos.y + this.size.h ) - gameObject.pos.y;
     	} else {
     		offset.y = this.pos.y - ( gameObject.pos.y + gameObject.size.h );
@@ -201,9 +182,8 @@ class Brick extends GameObject {
       if ( data.overlap ) {
         gameObject.rebound(data.offset);
         return true;
-      } else {
-        return false;
       }
+      return false;
     }
   }
 }
@@ -229,12 +209,17 @@ class Ball extends GameObject {
   }
   /**
    * update()
+   * @param {Object} keys - keys pressed
    *
    * Update the position of the ball
    */
-  update(){
-    this.pos.x += Math.round(this.velocity.x * this.speed);
-    this.pos.y += Math.round(this.velocity.y * this.speed);
+  update( keys ){
+    if ( 40 in keys ) { // Down arrow
+      this.launched = true;
+    } else {
+      this.pos.x += Math.round(this.velocity.x * this.speed);
+      this.pos.y += Math.round(this.velocity.y * this.speed);     
+    }
   }
   /**
    * rebound()
@@ -252,18 +237,11 @@ class Ball extends GameObject {
   	}
     this.pos.x = this.pos.x + offset.x;
   	this.pos.y = this.pos.y + offset.y;
-  	if ( offset.x !== 0 ) {
-    	 this.velocity.x = -1 * this.velocity.x;
-  	}
-  	if ( offset.y !== 0 ) {
-  		this.velocity.y = -1 * this.velocity.y;
-  	}
-  	if ( paddle ) {
+  	if ( offset.x !== 0 ) this.velocity.x = -1 * this.velocity.x;
+  	if ( offset.y !== 0 ) this.velocity.y = -1 * this.velocity.y;
+  	if ( paddle !== undefined ) {
       let normal = Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.y * this.velocity.y);
-      let ballCenter = this.pos.x + (this.size.w / 2);
-      let paddleCenter = paddle.pos.x + (paddle.size.w / 3);
-      //let posX = (this.centerX - paddle.centerX) / paddle.centerW;
-      let posX = (ballCenter - paddleCenter) / (paddle.size.w / 2);
+      let posX = (this.centerX - paddle.centerX) / paddle.centerW;
       this.velocity.x = normal * posX * paddle.variance;
     } 
   }   
@@ -316,23 +294,20 @@ class Paddle extends GameObject {
     this.speed = speed;
     this.state = "normal";
     this.variance = 0.8;
-    this.mouseSpeed = 30;
+    this.mouseSpeed = 10;
     this.mouseX = 0;
     this.movingTo = 0;
     this.moving = false;
   }
   /**
    * update()
+   * @param {Object} keys - keys pressed
    * 
    * updates the paddles position on the canvas
    */
-  update(){
-    if ( 37 in keysDown ) // player going left
-      this.pos.x -= Math.round(this.velocity.x * this.speed);
-    if ( 39 in keysDown ) // player going right
-      this.pos.x += Math.round(this.velocity.x * this.speed);
-      
-    
+  update( keys ){
+    if ( 37 in keys ) this.pos.x -= Math.round(this.velocity.x * this.speed);
+    if ( 39 in keys ) this.pos.x += Math.round(this.velocity.x * this.speed);
   }
   /**
    * checkCollision()
@@ -356,29 +331,23 @@ class Paddle extends GameObject {
    * Set bounds for a gameObject the object cannot cross
    */
   setBounds( canvas ) {
-    if ( this.pos.x >= canvas.width - this.size.w )
-      this.pos.x = canvas.width - this.size.w;
-    if ( this.pos.x <= 0 )
-      this.pos.x = 1;
-      
-    if(mouseMove.x != this.mouseX){
+    if ( this.pos.x >= canvas.width - this.size.w ) this.pos.x = canvas.width - this.size.w;
+    if ( this.pos.x <= 0 ) this.pos.x = 1;
+    if ( mouseMove.x != this.mouseX ) {
       this.movingTo = this.mouseX = mouseMove.x;
       this.moving = true;
     }
-    
-    if(this.moving){
-      if(this.movingTo > (this.centerX + 10)){
+    if ( this.moving ) {
+      if ( this.movingTo > (this.centerX + 6) ) {
         this.pos.x += this.mouseSpeed;
         this.mouseX = mouseMove.x;
-      }else if(this.movingTo < (this.centerX - 10)){
+      } else if ( this.movingTo < (this.centerX - 6) ) {
         this.pos.x -= this.mouseSpeed;
         this.mouseX = mouseMove.x;
-      }else{
+      } else {
         this.moving = false;
       }
     }
-    
-    
   }    
 }
 class LevelManager {
@@ -387,29 +356,22 @@ class LevelManager {
    *
    * Manages state for which level we are currently on
    */  
-  constructor(){
-    this.levels = [];  
-  }
+  constructor(){ this.levels = []; }
   /**
    * level()
    *
    * Get the current level
    */
   get level(){
-    if ( this.levels.length === 0 ) {
-      return false;
-    } else {
-      return this.levels[0];  
-    }
+    if ( this.levels.length === 0 ) return false;
+    return this.levels[0];  
   }
   /**
    * reset()
    *
    * Reset the LevelManager
    */
-  reset(){
-    this.levels = [];
-  }
+  reset(){ this.levels = []; }
   /**
    * parseBrick()
    * @param {Object} brickObj - bricks are objects too
@@ -443,9 +405,7 @@ class LevelManager {
    *
    * Remove the current level so that the next one can be called
    */
-  next(){
-    this.levels.shift();
-  }
+  next(){ this.levels.shift(); }
 }
 class Game {
   /**
@@ -458,6 +418,7 @@ class Game {
   constructor( canvasManager, levelManager ) {
     this.lm = levelManager;
     this.cm = canvasManager;
+    this.keysDown = {};
     this.meter = new FPSMeter({position:'absolute', right:0, bottom: 0, top: 'auto', left: 'auto'}); /*global FPSMeter*/
     this.timestep = 1000 / 60;
     this.then = performance.now() || Date.now(); /* global performance */
@@ -466,8 +427,11 @@ class Game {
     this.ball = undefined;
     this.paddle = undefined;
     this.frame = undefined;
+    this.powerup = undefined;
     this.gameState = 0;
     this.statsLocation = { x : 0, y : 0, w : 0, h : 0};
+    window.addEventListener("keydown", (e) => { if ( e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 40 ) this.keysDown[e.keyCode] = true;});
+    window.addEventListener("keyup", (e) => { if ( this.keysDown[e.keyCode] ) delete this.keysDown[e.keyCode]; });
   }
   /**
    * init()
@@ -575,9 +539,8 @@ class Game {
     let now = performance.now() || Date.now();
     let delta = now - this.then;
     this.then = now;
-    delta += this.timestep;
     this.frame = window.requestAnimationFrame(this.loop.bind(this));
-    for ( ; delta >= this.timestep; delta -= this.timestep ) this.update();
+    for ( delta += this.timestep ; delta >= this.timestep; delta -= this.timestep ) this.update();
     this.render();
     this.meter.tick();
   }
@@ -597,10 +560,9 @@ class Game {
       } else {
         this.start(); // Start the next level
       }
-    } else if ( this.ball.pos.y > this.paddle.bottom + (this.paddle.size.h * 2) ) { // Ball below paddle
-      // player lost a life, check if it's a gameOver or if it's just a lost life, do leg work in the function
-      this.isGameOver(this.ball.lives);
     }
+    // isGameOver?
+    if ( this.ball.pos.y > this.paddle.bottom + (this.paddle.size.h * 2) ) this.isGameOver(this.ball.lives);
     // set bounds for paddle object
     this.paddle.setBounds(this.cm.canvas);
     if ( !this.ball.launched ) { // Ball not launched
@@ -608,22 +570,15 @@ class Game {
       // the ball to any GameObject
       this.ball.bindsTo(this.paddle);
       // launch ball
-      if ( 40 in keysDown ) { // Down arrow
-        this.cm.ctx.clearRect(
-          (this.cm.canvas.width / 2) - 175,
-          (this.cm.canvas.height / 2) - 75,
-          350, 150
-        );
-        this.ball.launched = true;
-      }
-      this.paddle.update();
+      if ( this.ball.update(this.keysDown) ) this.cm.ctx.clearRect( (this.cm.canvas.width / 2) - 175, (this.cm.canvas.height / 2) - 75, 350, 150 );
+      this.paddle.update(this.keysDown);
     } else {
       // set ball bounds
       this.ball.setBounds(this.cm.canvas);
       // does ball collide with paddle?
       this.paddle.checkCollision(this.ball);
-      this.ball.update();
-      this.paddle.update();      
+      this.ball.update(this.keysDown);
+      this.paddle.update(this.keysDown);      
       for ( let i = 0; i < this.lm.level.length; i++ ) {
         if ( this.lm.level[i].checkCollision(this.ball) ) { // check if ball collides with brick object
           /**
@@ -634,21 +589,19 @@ class Game {
           switch ( this.lm.level[i].power ) {
               case "slow":
                 this.ball.speed = 0.02;
-                //this.paddle.speed = 0.02;
                 this.ball.updateSprite(SpriteMap.ball.slow);
                 // timeout powerup after ten seconds
-                setTimeout(function(self){
+                this.powerup = setTimeout(function(self){
                   self.ball.speed = 0.085;
                   //self.paddle.speed = 0.085;
                   self.ball.updateSprite(SpriteMap.ball.normal);
                 }, 10000, this);
               break;
               case "fast":
-                this.ball.speed = 0.09;
-                //this.paddle.speed = 0.09;
+                this.ball.speed = 0.0999;
                 this.ball.updateSprite(SpriteMap.ball.fast);
                 // timeout powerup after ten seconds
-                setTimeout(function(self){
+                this.powerup = setTimeout(function(self){
                   self.ball.speed = 0.085;
                   //self.paddle.speed = 0.085;
                   self.ball.updateSprite(SpriteMap.ball.normal);
@@ -657,18 +610,18 @@ class Game {
               case "expand":
                 this.paddle.updateSprite(SpriteMap.paddle.large);
                 // timeout powerup after ten seconds
-                setTimeout(function(self){
+                this.powerup = setTimeout(function(self){
                   self.paddle.updateSprite(SpriteMap.paddle.normal);
                 }, 10000, this);
               break;
               case "contract":
                 this.paddle.updateSprite(SpriteMap.paddle.small);
                 // timeout powerup after ten seconds
-                setTimeout(function(self){
+                this.powerup = setTimeout(function(self){
                   self.paddle.updateSprite(SpriteMap.paddle.normal);
                 }, 10000, this);                
               break;
-              case "start":
+              case "star":
               break;
           }                      
           if ( this.lm.level[i].breakable ) { // if block breakable
@@ -714,45 +667,44 @@ class Game {
 /***************************************************************************************************************************/
 const SpriteMap = {
   sheet: undefined,
-  logo: {x: 50, y: 0, w:320, h: 130},
+  logo: { x: 50, y: 0, w:320, h: 130 },
   bricks: {
     full: {
-      normal: {x: 222, y: 0, w: 50, h: 25},
-      shield1: {x: 72, y: 0, w: 50, h: 25},
-      shield2: {x: 122, y: 0, w: 50, h: 25},
-      shield3: {x: 172, y: 0, w: 50, h: 25},
-      star: {x: 0, y: 25, w: 50, h: 25}
+      normal: { x: 222, y: 0, w: 50, h: 25 },
+      shield1: { x: 72, y: 0, w: 50, h: 25 },
+      shield2: { x: 122, y: 0, w: 50, h: 25 },
+      shield3: { x: 172, y: 0, w: 50, h: 25 },
+      star: { x: 0, y: 25, w: 50, h: 25 }
     },
     half: {
-      normal: {x: 100, y: 25, w: 25, h: 25},
-      shield1: {x: 272, y: 0, w: 25, h: 25},
-      shield2: {x: 50, y: 25, w: 25, h: 25},
-      shield3: {x: 75, y: 25, w: 25, h: 25},
-      star: {x: 125, y: 25, w: 25, h: 25}
+      normal: { x: 100, y: 25, w: 25, h: 25 },
+      shield1: { x: 272, y: 0, w: 25, h: 25 },
+      shield2: { x: 50, y: 25, w: 25, h: 25 },
+      shield3: { x: 75, y: 25, w: 25, h: 25 },
+      star: { x: 125, y: 25, w: 25, h: 25 }
     }
   },
   powers:{
-    slow: {x: 198, y: 180, w: 24, h: 24},
-    fast: {x: 222, y: 180, w: 24, h: 24},
-    expand: {x: 174, y: 180, w: 24, h: 24},
-    contract: {x: 150, y: 180, w: 24, h: 24},
-    star: {x: 246, y: 180, w: 24, h: 24}
+    slow: { x: 198, y: 180, w: 24, h: 24 },
+    fast: { x: 222, y: 180, w: 24, h: 24 },
+    expand: { x: 174, y: 180, w: 24, h: 24 },
+    contract: { x: 150, y: 180, w: 24, h: 24 },
+    star: { x: 246, y: 180, w: 24, h: 24 }
   },
   paddle: {
-    small: {x: 250, y: 25, w: 50, h: 16},
-    normal: {x: 150, y: 25, w: 100, h: 16},
-    large: {x: 0, y: 180, w: 150, h: 16}
+    small: { x: 250, y: 25, w: 50, h: 16 },
+    normal: { x: 150, y: 25, w: 100, h: 16 },
+    large: { x: 0, y: 180, w: 150, h: 16 }
   },
   ball: {
-    normal: {x: 24, y: 0, w: 24, h: 24, r: 24},
-    slow: {x: 48, y: 0, w: 24, h: 24, r: 24},
-    fast: {x: 0, y: 0, w: 24, h: 24, r: 24}
+    normal: { x: 24, y: 0, w: 24, h: 24, r: 24 },
+    slow: { x: 48, y: 0, w: 24, h: 24, r: 24 },
+    fast: { x: 0, y: 0, w: 24, h: 24, r: 24 }
   }
 };
 let canvasManager = new CanvasManager(document.querySelector("#canvas"));
 let levelManager = new LevelManager();
 let breakout = new Game(canvasManager, levelManager);
-let keysDown = {};
 let mouseMove = {x:0, y:0, px: 0, py: 0};
 assetLoader.finished = function(){ /* global assetLoader */
   SpriteMap.sheet = assetLoader.imgs.ts;
@@ -762,13 +714,13 @@ assetLoader.downloadAll();
 /***************************************************************************************************************************/
 /* Controls
 /***************************************************************************************************************************/
-window.addEventListener("keydown", function(e){ if ( e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 40 ) keysDown[e.keyCode] = true; });
-window.addEventListener("keyup", function(e){ if ( keysDown[e.keyCode] === true ) delete keysDown[e.keyCode]; });
-canvasManager.canvas.addEventListener("mousemove", function(e){
-  let canvasRect = canvasManager.canvas.getBoundingClientRect();
-  mouseMove.px = mouseMove.x;
-  mouseMove.py = mouseMove.y;
-  mouseMove.x = e.clientX - canvasRect.left;
-  mouseMove.y = e.clientY - canvasRect.top;
-});
+/*
+  canvasManager.canvas.addEventListener("mousemove", function(e){
+    let canvasRect = canvasManager.canvas.getBoundingClientRect();
+    mouseMove.px = mouseMove.x;
+    mouseMove.py = mouseMove.y;
+    mouseMove.x = e.clientX - canvasRect.left;
+    mouseMove.y = e.clientY - canvasRect.top;
+  });
+*/
 /***************************************************************************************************************************/
