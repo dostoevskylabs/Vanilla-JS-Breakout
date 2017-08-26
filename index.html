@@ -4,62 +4,13 @@
   <title>Breakout</title>
   <link rel="stylesheet" href="breakout.css?v=2" type="text/css" />
   <script type="text/javascript" src="fpsmeter.js"></script>
-  <script type="text/javascript">
-    const assetLoader = function(){
-      /**
-       * assetLoader
-       * by Steven Lambert
-       * https://github.com/straker/endless-runner-html5-game/tree/master/part3
-       */
-      this.imgs        = {
-        "ts"            : "http://i.imgur.com/XYKFTqe.png",
-        "heart"         : "http://i.imgur.com/H6RvIug.png"
-      };
-      let assetsLoaded = 0;
-      let numImgs      = Object.keys(this.imgs).length;
-      this.totalAssest = numImgs;
-      function assetLoaded(dic, name){
-        if ( this[dic][name].status !== "loading" ) {
-          return;
-        }
-        this[dic][name].status = "loaded";
-        assetsLoaded++;
-        if ( assetsLoaded === this.totalAssest && typeof this.finished === "function" ) {
-          this.finished();
-        }
-      }
-      this.downloadAll = function(){
-        let self = this;
-        let src;
-        for ( let img in this.imgs ) {
-          if ( this.imgs.hasOwnProperty(img) ) {
-            src = this.imgs[img];
-            (function(self, img) {
-              self.imgs[img] = new Image();
-              self.imgs[img].status = "loading";
-              self.imgs[img].name = img;
-              self.imgs[img].onload = function(){
-                assetLoaded.call(self, "imgs", img);
-              };
-              self.imgs[img].src = src;
-            })(self, img);
-          }
-        }
-      };
-      return {
-        imgs: this.imgs,
-        totalAssest: this.totalAssest,
-        downloadAll: this.downloadAll
-      };
-    }();
-  </script>
 </head>
 <body>
   <div id="container">
     <img src="images/logo.png" id="logo"/>
     <canvas id="canvas" width="1250" height="720"></canvas>
   </div>
-  
+  <script type="text/javascript" src="fpsmeter.js"></script>
   <script type="text/javascript" src="breakout.js"></script>
 </body>
 </html>
