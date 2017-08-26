@@ -4,7 +4,7 @@
  * @author Andrew Miller
  * @author Elijah Seymour
  */
-class CanvasManager{
+class CanvasManager {
   /*
    * @class CanvasManager
    * @param {Object} canvas - our canvas element
@@ -12,7 +12,7 @@ class CanvasManager{
    * Manages the Canvas and handles resizing
    * Creates a reference to our canvas and context
    */  
-   constructor(canvas){
+   constructor( canvas ) {
      this.canvas = canvas;
      this.ctx = this.canvas.getContext('2d');
      this.safeWidth = canvas.width;
@@ -21,7 +21,7 @@ class CanvasManager{
      //resizeGame.apply(this);
    }
 }
-class GameObject{
+class GameObject {
   /**
    * @class GameObject
    * @param {Number} x - position x
@@ -32,7 +32,7 @@ class GameObject{
    * 
    * Creates a new GameObject and gives generic access to inherited helper functions
    */  
-  constructor(x, y, w, h, sprite = {}){
+  constructor( x, y, w, h, sprite = {} ) {
     this.size = { w: w, h: h };
     this.pos = { x: x, y: y };
     this.prev = {x: x, y: y, w: w, h: h };
@@ -50,7 +50,25 @@ class GameObject{
   get left(){
     return this.pos.x;
   }
-  updateSprite(sprite){
+  get centerX(){
+    return this.pos.x + (this.size.w / 2)
+  }
+  get centerY(){
+    return this.pos.y + (this.size.h / 2);
+  }
+  get centerW(){
+    return this.size.w / 2;
+  }
+  get cetnerH(){
+    return this.size.h / 2;
+  }
+  /**
+   * updateSprite()
+   * @param {Object} sprite - sprite object
+   * 
+   * update the sprite data to draw it on canvas
+   */
+  updateSprite( sprite ) {
     this.sprite = sprite;
     this.size.w = sprite.w;
     this.size.h = sprite.h;
@@ -61,7 +79,7 @@ class GameObject{
    *
    * Render a GameObject on the canvas
    */
-  draw(ctx){
+  draw( ctx ) {
     if ( this.pos.x != this.prev.x ||
           this.pos.y != this.prev.y ||
           this.size.w != this.prev.w ||
@@ -86,7 +104,7 @@ class GameObject{
    *
    * remove a GameObject from the canvas
    */
-  clear(ctx){
+  clear( ctx ) {
     ctx.fillStyle = "pink";
     ctx.fillRect(this.prev.x, this.prev.y, this.prev.w, this.prev.h);
     ctx.clearRect(this.prev.x, this.prev.y, this.prev.w, this.prev.h);
@@ -99,12 +117,9 @@ class GameObject{
    * checkCollision()
    * @param {Object} gameObject - any game object
    * 
-   * check if GameObject collides with another GameObject
-   * also inception
-   * also i put inception in your inception so you could inception
-   * ...while you inception
+   * check if points are overlapping a GameObject
    */
-  checkCollision(gameObject){
+  checkCollision( gameObject ) {
     let offset = { x : 0, y : 0 };
     let overlap = false;
     if ( ( this.pos.x + this.size.w >= gameObject.pos.x && gameObject.pos.x + gameObject.size.w >= this.pos.x ) &&
@@ -124,7 +139,7 @@ class GameObject{
     return {overlap, offset};
   }
 }
-class Brick extends GameObject{
+class Brick extends GameObject {
   /**
    * @class Brick
    * @extends GameObject
@@ -138,7 +153,7 @@ class Brick extends GameObject{
    * 
    * Create a new Brick that extends the GameObject class
    */
-  constructor(sprite, x, y, type, power, breakable, color){
+  constructor( sprite, x, y, type, power, breakable, color ) {
     super(x, y, sprite.w, sprite.h, sprite);
     let baseHp = {normal: 0, star: 0, shield1: 1, shield2: 2, shield3: 3};
     this.color = color;
@@ -150,7 +165,7 @@ class Brick extends GameObject{
   /**
    * hit()
    * 
-   * Do hit stuff
+   * for blocks that get hit more than once to break
    */
    hit(){
      if ( this.type != 'normal' && this.type != 'star' ) {
@@ -166,7 +181,7 @@ class Brick extends GameObject{
    * 
    * Draw Brick to canvas
    */
-  draw(ctx){
+  draw( ctx ) {
     // Draw Background Color
     ctx.fillStyle = this.color;
     ctx.fillRect(this.pos.x + 1, this.pos.y + 1, this.size.w - 2, this.size.h -2);
@@ -179,7 +194,7 @@ class Brick extends GameObject{
    * 
    * Check collision with bricks
    */
-  checkCollision(gameObject){
+  checkCollision( gameObject ) {
     if ( gameObject instanceof Ball ) {
       let data;
       data = super.checkCollision(gameObject);
@@ -192,17 +207,18 @@ class Brick extends GameObject{
     }
   }
 }
-class Ball extends GameObject{
+class Ball extends GameObject {
   /**
    * @class   Ball
    * @extends GameObject
    * @param {Object} sprite - sprite object
    * @param {Number} x - position x
    * @param {Number} y - position y
+   * @param {Number} speed - speed modifier
    * 
    * Create a new Ball that extends the GameObject class
    */  
-  constructor(sprite, x, y, speed){
+  constructor( sprite, x, y, speed ) {
     super(x, y, sprite.w, sprite.h, sprite);
     this.velocity = {x: 50, y: -50};
     this.lives = 3;
@@ -226,7 +242,7 @@ class Ball extends GameObject{
    *
    * rebound!
    */
-  rebound(offset, paddle = undefined){
+  rebound( offset, paddle = undefined ) {
   	let minShift = Math.min( Math.abs(offset.x),
   				                    Math.abs(offset.y) );
   	if ( Math.abs(offset.x) === minShift ) {
@@ -234,14 +250,7 @@ class Ball extends GameObject{
   	} else {
   		offset.x = 0;	
   	}
-  	if ( paddle ) {
-    	  console.log(paddle);
-    	  let angle = (paddle.size.w - (this.pos.x - paddle.pos.x)) * (Math.PI / paddle.size.w);
-    	  console.log("angle", Math.cos(angle));
-    	  this.velocity.x = -1 * Math.cos(angle) * this.velocity.x;
-    	  console.log("moo", this.velocity.x);
-    }
-  	this.pos.x = this.pos.x + offset.x;
+    this.pos.x = this.pos.x + offset.x;
   	this.pos.y = this.pos.y + offset.y;
   	if ( offset.x !== 0 ) {
     	 this.velocity.x = -1 * this.velocity.x;
@@ -249,6 +258,14 @@ class Ball extends GameObject{
   	if ( offset.y !== 0 ) {
   		this.velocity.y = -1 * this.velocity.y;
   	}
+  	if ( paddle ) {
+      let normal = Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.y * this.velocity.y);
+      let ballCenter = this.pos.x + (this.size.w / 2);
+      let paddleCenter = paddle.pos.x + (paddle.size.w / 3);
+      //let posX = (this.centerX - paddle.centerX) / paddle.centerW;
+      let posX = (ballCenter - paddleCenter) / (paddle.size.w / 2);
+      this.velocity.x = normal * posX * paddle.variance;
+    } 
   }   
   /**
    * bindsTo()
@@ -256,7 +273,7 @@ class Ball extends GameObject{
    * 
    * Binds ball to any GameObject
    */
-  bindsTo(gameObject){
+  bindsTo( gameObject ) {
     this.pos.x = gameObject.pos.x + gameObject.size.w / 2.5;
     this.pos.y = gameObject.pos.y - this.size.h;    
   }
@@ -266,7 +283,7 @@ class Ball extends GameObject{
    *
    * Set bounds for a gameObject the object cannot cross
    */
-  setBounds(canvas){
+  setBounds( canvas ) {
     if ( this.left < 0 ) {
       this.pos.x = 0;
       this.velocity.x = -1 * this.velocity.x;
@@ -282,21 +299,27 @@ class Ball extends GameObject{
     }
   }
 }
-class Paddle extends GameObject{
+class Paddle extends GameObject {
   /**
    * @class   Paddle
    * @extends GameObject
    * @param {Object} sprite - sprite object
    * @param {Number} x - position x
    * @param {Number} y - position y
+   * @param {Number} speed  - speed modifier
    *
    * Create a new Paddle that extends the GameObject class
    */  
-  constructor(sprite, x, y, speed){
+  constructor( sprite, x, y, speed ) {
     super(x, y, sprite.w, sprite.h, sprite);
     this.velocity = {x: 100, y: 0};
     this.speed = speed;
     this.state = "normal";
+    this.variance = 0.8;
+    this.mouseSpeed = 30;
+    this.mouseX = 0;
+    this.movingTo = 0;
+    this.moving = false;
   }
   /**
    * update()
@@ -308,17 +331,16 @@ class Paddle extends GameObject{
       this.pos.x -= Math.round(this.velocity.x * this.speed);
     if ( 39 in keysDown ) // player going right
       this.pos.x += Math.round(this.velocity.x * this.speed);
+      
+    
   }
   /**
    * checkCollision()
    * @param {Object} gameObject - any GameObject
    * 
-   * Check if the Ball collides with another GameObject
+   * Check if GameObject (Namely the Ball) - collides with the paddle
    */
-  checkCollision(gameObject){
-
-    
-    
+  checkCollision( gameObject ) {
     if ( gameObject instanceof Ball ) {
       let data;
       data = super.checkCollision(gameObject);
@@ -333,14 +355,33 @@ class Paddle extends GameObject{
    *
    * Set bounds for a gameObject the object cannot cross
    */
-  setBounds(canvas){
+  setBounds( canvas ) {
     if ( this.pos.x >= canvas.width - this.size.w )
       this.pos.x = canvas.width - this.size.w;
     if ( this.pos.x <= 0 )
       this.pos.x = 1;
+      
+    if(mouseMove.x != this.mouseX){
+      this.movingTo = this.mouseX = mouseMove.x;
+      this.moving = true;
+    }
+    
+    if(this.moving){
+      if(this.movingTo > (this.centerX + 10)){
+        this.pos.x += this.mouseSpeed;
+        this.mouseX = mouseMove.x;
+      }else if(this.movingTo < (this.centerX - 10)){
+        this.pos.x -= this.mouseSpeed;
+        this.mouseX = mouseMove.x;
+      }else{
+        this.moving = false;
+      }
+    }
+    
+    
   }    
 }
-class LevelManager{
+class LevelManager {
   /**
    * @class LevelManager
    *
@@ -375,7 +416,7 @@ class LevelManager{
    * 
    * Bricks are for parsing
    */
-  parseBrick(brickObj){
+  parseBrick( brickObj ) {
     let typeMap = ["normal", "shield1", "shield2", "shield3", "star"];
     let powerMap = ["none", "slow", "fast", "expand", "contract", "star"];
     let size = brickObj.s == 0 ? 'half' : 'full';
@@ -392,11 +433,9 @@ class LevelManager{
    *
    * Add a new level to the LevelManager
    */
-  add(level){
+  add( level ) {
     let tLevel = [];
-    for ( let brick of level ) {
-      tLevel.push(this.parseBrick(brick));
-    }
+    level.map((brick) => tLevel.push(this.parseBrick(brick)));
     this.levels.push(tLevel);
   }
   /**
@@ -408,7 +447,7 @@ class LevelManager{
     this.levels.shift();
   }
 }
-class Game{
+class Game {
   /**
    * @class Game
    * @param {Object} canvasManager - Our CanvasManager Class
@@ -416,20 +455,19 @@ class Game{
    * 
    * Creates an instance of our game
    */  
-  constructor(canvasManager, levelManager){
+  constructor( canvasManager, levelManager ) {
     this.lm = levelManager;
     this.cm = canvasManager;
     this.meter = new FPSMeter({position:'absolute', right:0, bottom: 0, top: 'auto', left: 'auto'}); /*global FPSMeter*/
     this.timestep = 1000 / 60;
     this.then = performance.now() || Date.now(); /* global performance */
-    this.window = { w: 1250, h: 720 };
     this.playArea = { x: 0, y: 0, w: 0, h: 0 };
     this.bricks = 0;
     this.ball = undefined;
     this.paddle = undefined;
     this.frame = undefined;
     this.gameState = 0;
-    this.statsLocation = {x:0,y:0,w:0,h:0};
+    this.statsLocation = { x : 0, y : 0, w : 0, h : 0};
   }
   /**
    * init()
@@ -445,7 +483,7 @@ class Game{
     switch ( this.gameState ) {
       // splash screen
       case 0:
-        this.lm.add([{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":25,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":50,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":125,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":150,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":175,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":225,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":250,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":275,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":325,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":350,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":375,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":425,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":450,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":475,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":525,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":550,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":575,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":625,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":675,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":725,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":750,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":775,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":825,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":900,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":950,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":1000,"y":25},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":25,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":75,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":125,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":175,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":225,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":350,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":425,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":475,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":525,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":625,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":675,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":725,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":825,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":875,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":950,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":1000,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":25,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":75,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":125,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":175,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":225,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":250,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":275,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":350,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":425,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":475,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":525,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":550,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":575,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":625,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":675,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":725,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":750,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":775,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":825,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":850,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":975,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":25,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":75,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":125,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":175,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":275,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":350,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":425,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":475,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":525,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":625,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":675,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":775,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":825,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":875,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":975,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":25,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":50,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":125,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":150,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":175,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":225,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":250,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":275,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":350,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":425,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":450,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":475,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":525,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":550,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":575,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":650,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":725,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":750,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":775,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":825,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":900,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":975,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":25,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":125,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":150,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":175,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":225,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":250,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":275,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":325,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":350,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":375,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":450,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":475,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":500,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":550,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":575,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":600,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":650,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":675,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":700,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":750,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":775,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":800,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":850,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":875,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":900,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":950,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":975,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":1000,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":1050,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":1075,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":1100,"y":175},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":25,"y":200},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":125,"y":200},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":175,"y":200},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":225,"y":200},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":275,"y":200},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":325,"y":200},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":450,"y":200},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":500,"y":200},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":550,"y":200},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":650,"y":200},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":750,"y":200},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":850,"y":200},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":900,"y":200},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":975,"y":200},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":1050,"y":200},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":25,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":125,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":150,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":175,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":225,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":250,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":275,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":325,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":350,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":375,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":450,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":475,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":500,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":550,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":575,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":600,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":650,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":675,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":700,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":750,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":775,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":800,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":850,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":900,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":975,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":1050,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":1075,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":1100,"y":225},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":25,"y":250},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":125,"y":250},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":175,"y":250},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":225,"y":250},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":275,"y":250},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":375,"y":250},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":450,"y":250},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":550,"y":250},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":700,"y":250},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":750,"y":250},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":850,"y":250},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":900,"y":250},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":975,"y":250},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":1100,"y":250},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":25,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":50,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":75,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":125,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":175,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":225,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":250,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":275,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":325,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":350,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":375,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":450,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":550,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":575,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":600,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":650,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":675,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":700,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":750,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":775,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":800,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":850,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":900,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":975,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":1050,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":1075,"y":275},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":1100,"y":275},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":275,"y":350},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":300,"y":350},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":325,"y":350},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":375,"y":350},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":400,"y":350},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":425,"y":350},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":475,"y":350},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":500,"y":350},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":525,"y":350},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":575,"y":350},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":600,"y":350},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":625,"y":350},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":675,"y":350},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":750,"y":350},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":800,"y":350},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":275,"y":375},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":325,"y":375},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":375,"y":375},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":425,"y":375},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":475,"y":375},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":575,"y":375},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":625,"y":375},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":675,"y":375},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":725,"y":375},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":800,"y":375},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":275,"y":400},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":300,"y":400},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":325,"y":400},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":375,"y":400},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":475,"y":400},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":500,"y":400},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":525,"y":400},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":575,"y":400},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":600,"y":400},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":625,"y":400},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":675,"y":400},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":700,"y":400},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":800,"y":400},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":275,"y":425},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":325,"y":425},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":375,"y":425},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":475,"y":425},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":575,"y":425},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":625,"y":425},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":675,"y":425},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":725,"y":425},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":275,"y":450},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":300,"y":450},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":325,"y":450},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":375,"y":450},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":475,"y":450},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":500,"y":450},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":525,"y":450},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":575,"y":450},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":625,"y":450},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":675,"y":450},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":750,"y":450},{"c":"#0080ff","t":0,"b":1,"p":0,"s":0,"x":800,"y":450}]);
+        this.lm.add([{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":150,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":175,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":200,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":250,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":275,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":300,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":350,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":375,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":400,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":450,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":475,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":500,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":550,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":600,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":650,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":150,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":200,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":250,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":300,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":350,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":450,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":500,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":550,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":600,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":650,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":150,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":175,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":200,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":250,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":350,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":375,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":450,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":475,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":500,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":550,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":575,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":650,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":150,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":200,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":250,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":350,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":450,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":500,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":550,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":600,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":150,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":175,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":200,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":250,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":350,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":375,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":400,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":450,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":500,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":550,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":600,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":650,"y":150}]);
         this.cm.ctx.clearRect(0, 0, this.cm.canvas.width, this.cm.canvas.height);
         this.ball = new Ball(SpriteMap.ball.normal, (this.cm.canvas.width / 2), (this.cm.canvas.height - 190), 0.085);
         this.paddle = new Paddle(SpriteMap.paddle.normal, (this.cm.canvas.width / 2) - 35, (this.cm.canvas.height - 160), 0.085);        
@@ -501,7 +539,6 @@ class Game{
     this.ball = new Ball(SpriteMap.ball.normal, (this.cm.canvas.width / 2), (this.cm.canvas.height - 190), 0.085);
     this.paddle = new Paddle(SpriteMap.paddle.normal, (this.cm.canvas.width / 2) - 35, (this.cm.canvas.height - 160), 0.085);
     this.cm.ctx.drawImage(SpriteMap.sheet, 0, 240, 350, 150, (this.cm.canvas.width / 2) - 175,(this.cm.canvas.height / 2) - 75, 350, 150);
-    this.updateStats();
     this.loop();
   }
   /**
@@ -510,7 +547,7 @@ class Game{
    *
    * Checks if the game is over, if its not it removes a ball
    */
-  isGameOver(lives){
+  isGameOver( lives ) {
     lives--;
     if ( lives === 0 ) {
       this.gameState++;
@@ -560,8 +597,7 @@ class Game{
       } else {
         this.start(); // Start the next level
       }
-    }
-    if ( this.ball.pos.y > this.paddle.bottom + (this.paddle.size.h * 2) ) { // Ball below paddle
+    } else if ( this.ball.pos.y > this.paddle.bottom + (this.paddle.size.h * 2) ) { // Ball below paddle
       // player lost a life, check if it's a gameOver or if it's just a lost life, do leg work in the function
       this.isGameOver(this.ball.lives);
     }
@@ -598,23 +634,23 @@ class Game{
           switch ( this.lm.level[i].power ) {
               case "slow":
                 this.ball.speed = 0.02;
-                this.paddle.speed = 0.02;
+                //this.paddle.speed = 0.02;
                 this.ball.updateSprite(SpriteMap.ball.slow);
                 // timeout powerup after ten seconds
                 setTimeout(function(self){
                   self.ball.speed = 0.085;
-                  self.paddle.speed = 0.085;
+                  //self.paddle.speed = 0.085;
                   self.ball.updateSprite(SpriteMap.ball.normal);
                 }, 10000, this);
               break;
               case "fast":
                 this.ball.speed = 0.09;
-                this.paddle.speed = 0.09;
+                //this.paddle.speed = 0.09;
                 this.ball.updateSprite(SpriteMap.ball.fast);
                 // timeout powerup after ten seconds
                 setTimeout(function(self){
                   self.ball.speed = 0.085;
-                  self.paddle.speed = 0.085;
+                  //self.paddle.speed = 0.085;
                   self.ball.updateSprite(SpriteMap.ball.normal);
                 }, 10000, this);                
               break;
@@ -653,11 +689,8 @@ class Game{
    * Draw data on screen
    */
   updateStats(){
-    // let bricks = this.lm.level.filter(function(brick){
-    //   return brick.breakable;
-    // });
     let newStatsLocation = { x: this.paddle.pos.x, y: this.paddle.pos.y + this.paddle.size.h + 5, w: this.paddle.size.w, h:18 };
-    if(this.statsLocation.x != newStatsLocation.x || this.statsLocation.w != newStatsLocation.w){
+    if ( this.statsLocation.x != newStatsLocation.x || this.statsLocation.w != newStatsLocation.w ) {
       this.cm.ctx.clearRect(this.statsLocation.x, this.statsLocation.y, this.statsLocation.w, this.statsLocation.h);
       this.cm.ctx.fillStyle = '#fff';
       this.cm.ctx.drawImage(assetLoader.imgs.heart, this.paddle.pos.x + (this.paddle.size.w / 2) - 10, this.paddle.pos.y + 25);
@@ -673,9 +706,11 @@ class Game{
   render(){
     this.ball.draw(this.cm.ctx);
     this.paddle.draw(this.cm.ctx);
-    for ( let brick of this.lm.level ) brick.draw(this.cm.ctx);
+    this.lm.level.map((brick) => brick.draw(this.cm.ctx));
   }
 }
+/***************************************************************************************************************************/
+/* Setup
 /***************************************************************************************************************************/
 const SpriteMap = {
   sheet: undefined,
@@ -714,23 +749,26 @@ const SpriteMap = {
     fast: {x: 0, y: 0, w: 24, h: 24, r: 24}
   }
 };
-/***************************************************************************************************************************/
 let canvasManager = new CanvasManager(document.querySelector("#canvas"));
 let levelManager = new LevelManager();
 let breakout = new Game(canvasManager, levelManager);
 let keysDown = {};
+let mouseMove = {x:0, y:0, px: 0, py: 0};
 assetLoader.finished = function(){ /* global assetLoader */
   SpriteMap.sheet = assetLoader.imgs.ts;
   breakout.init();
 };
 assetLoader.downloadAll();
 /***************************************************************************************************************************/
-window.addEventListener("keydown", function(e){
-  if ( e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 40 )
-    keysDown[e.keyCode] = true;
-});
-window.addEventListener("keyup", function(e){
-  if ( keysDown[e.keyCode] === true )
-    delete keysDown[e.keyCode];
+/* Controls
+/***************************************************************************************************************************/
+window.addEventListener("keydown", function(e){ if ( e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 40 ) keysDown[e.keyCode] = true; });
+window.addEventListener("keyup", function(e){ if ( keysDown[e.keyCode] === true ) delete keysDown[e.keyCode]; });
+canvasManager.canvas.addEventListener("mousemove", function(e){
+  let canvasRect = canvasManager.canvas.getBoundingClientRect();
+  mouseMove.px = mouseMove.x;
+  mouseMove.py = mouseMove.y;
+  mouseMove.x = e.clientX - canvasRect.left;
+  mouseMove.y = e.clientY - canvasRect.top;
 });
 /***************************************************************************************************************************/
