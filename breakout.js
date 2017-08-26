@@ -189,7 +189,7 @@ class Brick extends GameObject {
 }
 class Ball extends GameObject {
   /**
-   * @class   Ball
+   * @class Ball
    * @extends GameObject
    * @param {Object} sprite - sprite object
    * @param {Number} x - position x
@@ -279,7 +279,7 @@ class Ball extends GameObject {
 }
 class Paddle extends GameObject {
   /**
-   * @class   Paddle
+   * @class Paddle
    * @extends GameObject
    * @param {Object} sprite - sprite object
    * @param {Number} x - position x
@@ -290,7 +290,7 @@ class Paddle extends GameObject {
    */  
   constructor( sprite, x, y, speed ) {
     super(x, y, sprite.w, sprite.h, sprite);
-    this.velocity = {x: 100, y: 0};
+    this.velocity = { x: 100, y: 0 };
     this.speed = speed;
     this.state = "normal";
     this.variance = 0.8;
@@ -407,17 +407,30 @@ class LevelManager {
    */
   next(){ this.levels.shift(); }
 }
+class GameState {
+  constructor() {
+    this.currentState = 0;
+    this.totalStates = 3;
+  }
+  get state(){ return this.currentState; }
+  next(){
+    if ( this.currentState === this.totalStates ) {
+      this.currentState = 0;
+    } else {
+      this.currentState++;
+    }
+  }
+}
 class Game {
   /**
    * @class Game
-   * @param {Object} canvasManager - Our CanvasManager Class
-   * @param {Object} levelManager - Our LevelManager Class
    * 
    * Creates an instance of our game
    */  
-  constructor( canvasManager, levelManager ) {
-    this.lm = levelManager;
-    this.cm = canvasManager;
+  constructor() {
+    this.lm = new LevelManager;
+    this.cm = new CanvasManager(document.querySelector("#canvas"));
+    this.gs = new GameState;
     this.keysDown = {};
     this.meter = new FPSMeter({position:'absolute', right:0, bottom: 0, top: 'auto', left: 'auto'}); /*global FPSMeter*/
     this.timestep = 1000 / 60;
@@ -428,9 +441,8 @@ class Game {
     this.paddle = undefined;
     this.frame = undefined;
     this.powerup = undefined;
-    this.gameState = 0;
     this.statsLocation = { x : 0, y : 0, w : 0, h : 0};
-    window.addEventListener("keydown", (e) => { if ( e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 40 ) this.keysDown[e.keyCode] = true;});
+    window.addEventListener("keydown", (e) => { if ( e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 40 ) this.keysDown[e.keyCode] = true; });
     window.addEventListener("keyup", (e) => { if ( this.keysDown[e.keyCode] ) delete this.keysDown[e.keyCode]; });
   }
   /**
@@ -444,7 +456,7 @@ class Game {
      *
      * May refactor this
      */
-    switch ( this.gameState ) {
+    switch ( this.gs.currentState ) {
       // splash screen
       case 0:
         this.lm.add([{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":150,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":175,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":200,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":250,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":275,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":300,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":350,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":375,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":400,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":450,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":475,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":500,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":550,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":600,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":650,"y":50},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":150,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":200,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":250,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":300,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":350,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":450,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":500,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":550,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":600,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":650,"y":75},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":150,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":175,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":200,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":250,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":350,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":375,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":450,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":475,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":500,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":550,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":575,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":650,"y":100},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":150,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":200,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":250,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":350,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":450,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":500,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":550,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":600,"y":125},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":150,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":175,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":200,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":250,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":350,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":375,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":400,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":450,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":500,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":550,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":600,"y":150},{"c":"#d93333","t":0,"b":1,"p":0,"s":0,"x":650,"y":150}]);
@@ -452,15 +464,15 @@ class Game {
         this.ball = new Ball(SpriteMap.ball.normal, (this.cm.canvas.width / 2), (this.cm.canvas.height - 190), 0.085);
         this.paddle = new Paddle(SpriteMap.paddle.normal, (this.cm.canvas.width / 2) - 35, (this.cm.canvas.height - 160), 0.085);        
         this.render();
-        setTimeout(function(self){
-          self.gameState++;
-          self.init(); 
+        setTimeout(function(parent){
+          parent.gs.next();
+          parent.init(); 
         }, 1000, this);
       break;
       // game menu
       case 1:
         this.lm.reset();
-        this.gameState++;
+        this.gs.next();
         this.init();
       break;
       // in-game
@@ -483,9 +495,9 @@ class Game {
         this.ball = new Ball(SpriteMap.ball.normal, this.cm.canvas.width / 2, (this.cm.canvas.height - 190), 0.085);
         this.paddle = new Paddle(SpriteMap.paddle.normal, (this.cm.canvas.width / 2) - 35, (this.cm.canvas.height - 160), 0.085);        
         this.render();
-        setTimeout(function(self){
-          self.gameState = 2;
-          self.init(); 
+        setTimeout(function(parent){
+          parent.gs.next();
+          parent.init(); 
         }, 7000, this);
       break;
     }
@@ -514,7 +526,7 @@ class Game {
   isGameOver( lives ) {
     lives--;
     if ( lives === 0 ) {
-      this.gameState++;
+      this.gs.next();
       this.init();
     }
     this.ball.clear(this.cm.ctx);
@@ -591,34 +603,34 @@ class Game {
                 this.ball.speed = 0.02;
                 this.ball.updateSprite(SpriteMap.ball.slow);
                 // timeout powerup after ten seconds
-                this.powerup = setTimeout(function(self){
-                  self.ball.speed = 0.085;
-                  //self.paddle.speed = 0.085;
-                  self.ball.updateSprite(SpriteMap.ball.normal);
+                this.powerup = setTimeout(function(parent){
+                  parent.ball.speed = 0.085;
+                  //parent.paddle.speed = 0.085;
+                  parent.ball.updateSprite(SpriteMap.ball.normal);
                 }, 10000, this);
               break;
               case "fast":
                 this.ball.speed = 0.0999;
                 this.ball.updateSprite(SpriteMap.ball.fast);
                 // timeout powerup after ten seconds
-                this.powerup = setTimeout(function(self){
-                  self.ball.speed = 0.085;
-                  //self.paddle.speed = 0.085;
-                  self.ball.updateSprite(SpriteMap.ball.normal);
+                this.powerup = setTimeout(function(parent){
+                  parent.ball.speed = 0.085;
+                  //parent.paddle.speed = 0.085;
+                  parent.ball.updateSprite(SpriteMap.ball.normal);
                 }, 10000, this);                
               break;
               case "expand":
                 this.paddle.updateSprite(SpriteMap.paddle.large);
                 // timeout powerup after ten seconds
-                this.powerup = setTimeout(function(self){
-                  self.paddle.updateSprite(SpriteMap.paddle.normal);
+                this.powerup = setTimeout(function(parent){
+                  parent.paddle.updateSprite(SpriteMap.paddle.normal);
                 }, 10000, this);
               break;
               case "contract":
                 this.paddle.updateSprite(SpriteMap.paddle.small);
                 // timeout powerup after ten seconds
-                this.powerup = setTimeout(function(self){
-                  self.paddle.updateSprite(SpriteMap.paddle.normal);
+                this.powerup = setTimeout(function(parent){
+                  parent.paddle.updateSprite(SpriteMap.paddle.normal);
                 }, 10000, this);                
               break;
               case "star":
@@ -663,6 +675,56 @@ class Game {
   }
 }
 /***************************************************************************************************************************/
+/* assetLoader
+/***************************************************************************************************************************/
+const assetLoader = function(){
+  /**
+   * assetLoader
+   * by Steven Lambert
+   * https://github.com/straker/endless-runner-html5-game/tree/master/part3
+   */
+  this.imgs        = {
+    "ts"            : "http://i.imgur.com/XYKFTqe.png",
+    "heart"         : "http://i.imgur.com/H6RvIug.png"
+  };
+  let assetsLoaded = 0;
+  let numImgs      = Object.keys(this.imgs).length;
+  this.totalAssest = numImgs;
+  function assetLoaded(dic, name){
+    if ( this[dic][name].status !== "loading" ) {
+      return;
+    }
+    this[dic][name].status = "loaded";
+    assetsLoaded++;
+    if ( assetsLoaded === this.totalAssest && typeof this.finished === "function" ) {
+      this.finished();
+    }
+  }
+  this.downloadAll = function(){
+    let self = this;
+    let src;
+    for ( let img in this.imgs ) {
+      if ( this.imgs.hasOwnProperty(img) ) {
+        src = this.imgs[img];
+        (function(self, img) {
+          self.imgs[img] = new Image(); /* global Image */
+          self.imgs[img].status = "loading";
+          self.imgs[img].name = img;
+          self.imgs[img].onload = function(){
+            assetLoaded.call(self, "imgs", img);
+          };
+          self.imgs[img].src = src;
+        })(self, img);
+      }
+    }
+  };
+  return {
+    imgs: this.imgs,
+    totalAssest: this.totalAssest,
+    downloadAll: this.downloadAll
+  };
+}();
+/***************************************************************************************************************************/
 /* Setup
 /***************************************************************************************************************************/
 const SpriteMap = {
@@ -702,11 +764,9 @@ const SpriteMap = {
     fast: { x: 0, y: 0, w: 24, h: 24, r: 24 }
   }
 };
-let canvasManager = new CanvasManager(document.querySelector("#canvas"));
-let levelManager = new LevelManager();
-let breakout = new Game(canvasManager, levelManager);
 let mouseMove = {x:0, y:0, px: 0, py: 0};
-assetLoader.finished = function(){ /* global assetLoader */
+let breakout = new Game;
+assetLoader.finished = function(){
   SpriteMap.sheet = assetLoader.imgs.ts;
   breakout.init();
 };
