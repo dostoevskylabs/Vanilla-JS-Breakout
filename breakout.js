@@ -1,8 +1,8 @@
 /**
  * Vanilla JS Breakout
  * 
- * @author Andrew Miller
- * @author Elijah Seymour
+ * @author Andrew M
+ * @author Elijah S
  */
 class CanvasManager {
   /*
