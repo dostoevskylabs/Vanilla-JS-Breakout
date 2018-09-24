@@ -2,9 +2,9 @@
 Practicing game dev concepts, still being worked on
 
 ### Developed by 
-Andrew Miller ([@starroad](https://codepen.io/StarRoad/))
+Andrew M ([@starroad](https://codepen.io/StarRoad/))
 
-Elijah Seymour ([@dostoevskylabs](https://www.twitter.com/dostoevskylabs))
+Elijah S ([@dostoevskylabs](https://www.twitter.com/dostoevskylabs))
 
 ### Current Demo
 https://codepen.io/dostoevskylabs/full/NvYGWN
